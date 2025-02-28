@@ -1,0 +1,77 @@
+# PyHearingAI .gitignore
+
+# Environment variables and secrets
+.env
+*.env
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.python-version
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+*.egg-info/
+*.egg
+
+# Distribution / packaging
+dist/
+build/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.manifest
+*.spec
+
+# Content directory with generated files
+content/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+.DS_Store
+
+# Debug files
+tests/debug/
+*.log
+logs/
+
+# Large files and models
+*.pt
+*.h5
+*.weights
+*.pb
+*.tflite
+*.onnx
+*.mlmodel
+
+# Audio files
+*.wav
+*.mp3
+*.m4a
+*.flac
+*.ogg
+*.mp4 
