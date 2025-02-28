@@ -7,14 +7,16 @@ The official library for transcribing audio conversations with accurate speaker 
 
 ## Current Status
 
-PyHearingAI is under active development. Documentation is evolving as features are implemented.
+PyHearingAI follows Clean Architecture principles with a well-organized code structure. The library provides a complete pipeline for audio transcription with speaker diarization and supports multiple output formats.
 
-## Current Features
+## Features
 
 - Audio format conversion for multiple input formats
-- Basic transcription pipeline for audio files
+- Transcription pipeline for audio files
 - Integration with OpenAI Whisper and Pyannote models
 - Speaker diarization and assignment
+- Multiple output formats (TXT, JSON, SRT, VTT, Markdown)
+- Clean Architecture design for maintainability and extensibility
 - End-to-end testing framework
 
 ## Requirements
@@ -25,14 +27,49 @@ PyHearingAI is under active development. Documentation is evolving as features a
   - OpenAI API key (for Whisper model access)
   - Hugging Face API key (for Pyannote model access)
 
-## Features Under Development
+## Installation
 
-- Simple installation via pip
-- One-line API usage
-- Flexible model selection
-- Performance optimizations
-- Multiple output formats
-- Additional model support
+### Using Poetry (Recommended)
+```bash
+poetry add pyhearingai
+```
+
+### Using pip
+```bash
+pip install pyhearingai
+```
+
+## Quick Start
+
+```python
+# Simple one-line usage
+from pyhearingai import transcribe
+
+# Process an audio file with default settings
+result = transcribe("meeting.mp3")
+
+# Process with specific models
+result = transcribe(
+    audio_path="meeting.mp3",
+    transcriber="whisper_openai",
+    diarizer="pyannote",
+    verbose=True
+)
+
+# Access the segments
+for segment in result.segments:
+    print(f"Speaker {segment.speaker_id}: {segment.text}")
+    
+# Available output formats
+from pyhearingai import list_output_formatters, get_output_formatter
+
+# List available formatters
+formatters = list_output_formatters()  # ['txt', 'json', 'srt', 'vtt', 'md']
+
+# Get a specific formatter and save output
+json_formatter = get_output_formatter('json')
+json_formatter.save(result, "transcript.json")
+```
 
 ## Testing
 
@@ -51,12 +88,18 @@ python -m pytest tests/test_end_to_end.py -v
 PyHearingAI is hosted on GitHub:
 - [https://github.com/MDGrey33/PyHearingAI](https://github.com/MDGrey33/PyHearingAI)
 
-## Architecture Documentation
+## Architecture
 
-For details on the solution design and architecture, see the documentation:
+PyHearingAI follows Clean Architecture principles with clear separation of concerns:
+
+- **Core Layer**: Contains domain models and interface definitions (ports)
+- **Application Layer**: Contains use cases and business logic
+- **Infrastructure Layer**: Contains implementations of interfaces (adapters)
+- **Presentation Layer**: Contains user interfaces (CLI, API, etc.)
+
+For more details on the solution design and architecture, see the documentation:
 - [Core Architecture](docs/architecture/01_core_architecture.md)
 - [Solution Design](docs/architecture/02_solution_design.md)
-- [Migration Plan](docs/MIGRATION_PLAN.md)
 
 ## Environment Variables
 
@@ -70,61 +113,33 @@ HUGGINGFACE_API_KEY=your_huggingface_api_key
 
 [Apache 2.0](LICENSE)
 
+## Implemented Features
+
+### Output Formats
+PyHearingAI supports the following output formats:
+- **TXT**: Simple text format with speaker labels
+- **JSON**: Structured data with timestamps and metadata
+- **SRT**: Subtitle format with timestamps
+- **VTT**: WebVTT subtitle format
+- **Markdown**: Formatted markdown with speaker sections
+
+### Transcription Models
+- OpenAI Whisper API (default)
+
+### Diarization Models
+- Pyannote (default)
+
 ## Features Under Development
 
-### Installation (Coming Soon)
-```bash
-pip install pyhearingai
-```
-
-### Planned API
-```python
-# Simple one-line usage (in development)
-from pyhearingai import transcribe
-transcribe("meeting.mp3")
-
-# CLI interface (planned)
-pyhearingai transcribe meeting.mp3
-```
-
-### Planned Features
-
-- 🎛️ **Flexible Model Selection**: 
-  - Choice between cloud and local models
-  - Support for multiple transcription and diarization models
-  - Custom model integration
+- 🎛️ **Extended Model Support**: 
+  - Local Whisper models
+  - Faster Whisper
+  - Additional diarization models
 
 - 🚀 **Performance Features**:
   - GPU Acceleration
   - Batch processing
   - Memory optimization
-
-- 📝 **Output Formats**:
-  - Markdown
-  - JSON
-  - TXT
-  - SRT subtitles
-
-### Planned Model Support
-
-#### Transcription
-- OpenAI Whisper API (default)
-- Local Whisper
-- Faster Whisper
-
-#### Diarization
-- Pyannote (default)
-- Additional models to be added
-
-#### Speaker Detection
-- Whisper-based detection
-- Custom models support
-
-### Documentation
-
-Full documentation is under development. For now, please refer to:
-- This README
-- Source code at [GitHub](https://github.com/MDGrey33/PyHearingAI)
 
 ## Contributing
 
