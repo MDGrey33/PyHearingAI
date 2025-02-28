@@ -134,4 +134,4 @@ We welcome contributions! Please check our [GitHub repository](https://github.co
 
 - OpenAI for the Whisper model
 - Pyannote for the diarization technology
-- The open-source community for various contributions 
+- The open-source community for various contributions
