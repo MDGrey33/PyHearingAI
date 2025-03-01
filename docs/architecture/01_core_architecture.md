@@ -16,54 +16,65 @@ PyHearingAI converts audio to text with speaker identification. Simple to use, e
 
 ## 2. Core Components
 
-```mermaid
-graph LR
-    A[Audio Input] --> B[Audio Processing]
-    B --> C[Transcription]
-    C --> D[Speaker Diarization]
-    D --> E[Result]
-    
-    F[Extensions] -.-> B
-    F -.-> C
-    F -.-> D
-    F -.-> E
+The library consists of these core components:
+
 ```
+┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
+│  Audio Input │──▶│  Processing │──▶│Transcription│──▶│   Speaker   │──▶│    Result   │
+└─────────────┘   └─────────────┘   └─────────────┘   └─────────────┘   └─────────────┘
+```
+
+1. **Audio Input**: Handles various audio formats (.mp3, .wav, .m4a, etc.)
+2. **Processing**: Converts audio to the required format for the transcription and diarization models
+3. **Transcription**: Converts audio to text using speech recognition models (e.g., OpenAI Whisper)
+4. **Speaker Diarization**: Identifies who spoke when in the audio
+   - **Speaker Assignment**: Uses GPT-4o to assign speaker identities based on transcript content
+5. **Result**: Formats and returns the transcription with speaker information in various formats
 
 ## 3. User API
 
-### 3.1 Simple API
+The library exposes a simple main API for basic usage and an advanced API for more control.
+
+### Simple API
+
 ```python
-# One line for common case
-result = transcribe("meeting.mp3")
-print(result.text)
-result.save("transcript.txt")
+from pyhearingai import transcribe
+
+# Basic usage
+result = transcribe("meeting_recording.mp3")
+print(result.text)  # Prints the full transcript with speaker labels
+
+# Save in different formats
+result.save("transcript.txt")  # Plain text
+result.save("transcript.json")  # JSON with segments, timestamps
+result.save("transcript.srt")   # Subtitle format
+result.save("transcript.md")    # Markdown format
 ```
 
-### 3.2 Advanced API
+### Advanced API
+
 ```python
-# Configure models
-result = transcribe(
-    "meeting.mp3",
-    transcriber={
-        "name": "whisper-large",
-        "language": "en"
-    },
-    diarizer={
-        "name": "pyannote",
-        "min_speakers": 2
-    }
+from pyhearingai import transcribe, pipeline_session
+from pyhearingai.models import TranscriptionConfig
+
+# Configure transcription with specific models
+config = TranscriptionConfig(
+    transcriber="whisper-openai",
+    diarizer="pyannote",
+    speaker_assigner="gpt-4o",  # Added speaker assignment model
+    output_format="json",
+    audio_processor="ffmpeg",
+    language="en"
 )
 
-# Track progress for long files
-def on_progress(info):
-    print(f"{info['stage']}: {info['progress']:.0%}")
-    
-result = transcribe("long_file.mp3", progress_callback=on_progress)
+# Process a single file with specific configuration
+result = transcribe("interview.mp3", config=config)
 
-# Reuse resources for multiple files
-with pipeline_session() as session:
+# Or set up a reusable pipeline session
+with pipeline_session(config) as session:
     result1 = session.transcribe("file1.mp3")
     result2 = session.transcribe("file2.mp3")
+    # Resources are efficiently managed
 ```
 
 ## 4. Extension System

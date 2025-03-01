@@ -6,49 +6,47 @@ PyHearingAI provides audio transcription and speaker identification with a simpl
 
 ## 1. Core Components
 
-```mermaid
-graph TD
-    Audio[Audio Input] --> Processor[Audio Processor]
-    Processor --> Transcriber[Transcription Engine]
-    Processor --> Diarizer[Speaker Diarization]
-    Transcriber --> Combiner[Result Combiner]
-    Diarizer --> Combiner
-    Combiner --> Result[TranscriptionResult]
-    Result --> OutputFormats[Output Formats]
-    
-    Extensions[Extension Registry] -.-> Processor
-    Extensions -.-> Transcriber
-    Extensions -.-> Diarizer
-    Extensions -.-> OutputFormats
 ```
+┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
+│ Audio Input │──▶│Audio Process│──▶│Transcription│──▶│Speaker Diari│──▶│   Speaker   │──▶│ Output Form │
+│             │   │    or       │   │   Engine    │   │  zation     │   │ Assignment  │   │    ats      │
+└─────────────┘   └─────────────┘   └─────────────┘   └─────────────┘   └─────────────┘   └─────────────┘
+```
+
+### Component Descriptions
+
+1. **Audio Input**: Handles various audio file formats (.mp3, .wav, etc.)
+2. **Audio Processor**: Converts audio to required format for transcription/diarization
+3. **Transcription Engine**: Converts speech to text with timestamps
+4. **Speaker Diarization**: Identifies when different speakers are talking
+5. **Speaker Assignment**: Uses AI (GPT-4o) to identify speakers based on conversation content
+6. **Result Combiner**: Merges transcription with speaker information
+7. **Output Formats**: Provides results in various formats (TXT, JSON, SRT, Markdown)
 
 ## 2. Main API
 
 ```python
 def transcribe(
-    audio: Union[str, Path, bytes, IO],
+    audio: Union[str, bytes, IO],
     transcriber: Union[str, dict] = "default",
     diarizer: Union[str, dict] = "default",
-    output_format: str = None,
-    progress_callback: Callable = None
+    speaker_assigner: Union[str, dict] = "default",
+    output_format: str = "txt",
+    progress_callback: Optional[Callable] = None
 ) -> TranscriptionResult:
     """
     Transcribe audio with speaker identification.
     
     Args:
-        audio: Path to audio file, file-like object, or bytes
-        transcriber: Transcription model name or config dict
-        diarizer: Diarization model name or config dict
-        output_format: Format to save results (determined from extension if None)
-        progress_callback: Function to report progress (receives dict with stage and progress)
+        audio: Path to audio file, bytes, or file-like object
+        transcriber: Transcription model to use (name or config dict)
+        diarizer: Diarization model to use (name or config dict)
+        speaker_assigner: Speaker assignment model to use (name or config dict)
+        output_format: Output format (txt, json, srt, vtt, md)
+        progress_callback: Function to call with progress updates
         
     Returns:
-        TranscriptionResult object with transcript and speaker information
-        
-    Raises:
-        AudioProcessingError: If audio cannot be processed
-        TranscriptionError: If transcription fails
-        DiarizationError: If speaker identification fails
+        TranscriptionResult object with the results
     """
 ```
 
@@ -111,36 +109,29 @@ class TranscriptionResult:
 ### 5.1 Basic Usage
 
 ```python
-# Simple case
+from pyhearingai import transcribe
+
+# Simple transcription
 result = transcribe("meeting.mp3")
-print(result.text)
+print(result.text)  # Full transcript with speaker labels
 
 # Save to different formats
-result.save("transcript.txt")  # Plain text
-result.save("transcript.srt")  # Subtitles
-result.save("transcript.json")  # JSON with timestamps
+result.save("transcript.txt")  # Text format
+result.save("transcript.json") # JSON format with detailed information
+result.save("transcript.srt")  # SubRip subtitle format
 ```
 
-### 5.2 Model Selection and Configuration
+### 5.2 Model Selection
 
 ```python
-# Select models by name
-result = transcribe("meeting.mp3", 
-                   transcriber="whisper-large",
-                   diarizer="pyannote")
-
-# Configure models with options
-result = transcribe("meeting.mp3", 
-                   transcriber={
-                       "name": "whisper-large", 
-                       "language": "en",
-                       "word_timestamps": True
-                   },
-                   diarizer={
-                       "name": "pyannote",
-                       "min_speakers": 2,
-                       "max_speakers": 5
-                   })
+# Choose specific models
+result = transcribe(
+    "interview.mp3",
+    transcriber="whisper-openai",
+    diarizer="pyannote",
+    speaker_assigner="gpt-4o",
+    output_format="markdown"
+)
 ```
 
 ### 5.3 Progress Tracking
@@ -167,49 +158,43 @@ with pipeline_session(transcriber="whisper-large") as session:
 ### 6.1 Registering Transcribers
 
 ```python
-@register_transcriber("my-custom-model")
-def my_transcription_model(audio, config=None):
-    """
-    Custom transcription model.
-    
-    Args:
-        audio: Processed audio data
-        config: Optional configuration dictionary
-        
-    Returns:
-        Dict with 'text' and 'segments' keys
-    """
-    # Your implementation here
-    return {
-        "text": "Full transcript...",
-        "segments": [
-            {"start": 0.0, "end": 2.5, "text": "Hello world"}
-        ]
-    }
+from pyhearingai.extensions import register_transcriber
+from pyhearingai.models import Transcriber
+
+@register_transcriber("my-transcriber")
+class MyTranscriber(Transcriber):
+    def transcribe(self, audio_path):
+        # Implementation
+        return segments
 ```
 
 ### 6.2 Registering Diarizers
 
 ```python
+from pyhearingai.extensions import register_diarizer
+from pyhearingai.models import Diarizer
+
 @register_diarizer("my-diarizer")
-def my_diarization_model(audio, config=None):
-    """
-    Custom speaker diarization model.
-    
-    Args:
-        audio: Processed audio data
-        config: Optional configuration dictionary
-        
-    Returns:
-        List of speaker segments
-    """
-    # Your implementation here
-    return [
-        {"start": 0.0, "end": 2.5, "speaker": "speaker_0"}
-    ]
+class MyDiarizer(Diarizer):
+    def diarize(self, audio_path):
+        # Implementation
+        return speaker_segments
 ```
 
-### 6.3 Custom Audio Processing
+### 6.3 Registering Speaker Assigners
+
+```python
+from pyhearingai.extensions import register_speaker_assigner
+from pyhearingai.models import SpeakerAssigner
+
+@register_speaker_assigner("my-assigner")
+class MySpeakerAssigner(SpeakerAssigner):
+    def assign_speakers(self, transcript_segments, diarization_segments):
+        # Implementation
+        return labeled_segments
+```
+
+### 6.4 Custom Audio Processing
 
 ```python
 @register_processor("noise-reduction")
@@ -228,7 +213,7 @@ def reduce_noise(audio, config=None):
     return processed_audio
 ```
 
-### 6.4 Custom Output Formats
+### 6.5 Custom Output Formats
 
 ```python
 @register_format(".custom")

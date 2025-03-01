@@ -11,11 +11,16 @@ PyHearingAI follows Clean Architecture principles with a well-organized code str
 
 ## Features
 
-- Audio format conversion for multiple input formats
-- Transcription pipeline for audio files
-- Integration with OpenAI Whisper and Pyannote models
-- Speaker diarization and assignment
-- Multiple output formats (TXT, JSON, SRT, VTT, Markdown)
+- Audio format conversion (supports mp3, wav, mp4, and more)
+- Transcription pipeline powered by OpenAI Whisper
+- Speaker diarization using Pyannote
+- Speaker assignment using GPT-4o
+- Support for multiple output formats:
+  - TXT
+  - JSON
+  - SRT
+  - VTT
+  - Markdown
 - Clean Architecture design for maintainability and extensibility
 - End-to-end testing framework
 
@@ -24,8 +29,8 @@ PyHearingAI follows Clean Architecture principles with a well-organized code str
 - Python 3.8+
 - FFmpeg for audio conversion
 - API keys:
-  - OpenAI API key (for Whisper model access)
-  - Hugging Face API key (for Pyannote model access)
+  - OpenAI API key (for Whisper transcription and GPT-4o speaker assignment)
+  - Hugging Face API key (for Pyannote speaker diarization)
 
 ## Installation
 
@@ -90,12 +95,12 @@ PyHearingAI is hosted on GitHub:
 
 ## Architecture
 
-PyHearingAI follows Clean Architecture principles with clear separation of concerns:
+PyHearingAI follows Clean Architecture principles, with clear separation of concerns:
 
-- **Core Layer**: Contains domain models and interface definitions (ports)
-- **Application Layer**: Contains use cases and business logic
-- **Infrastructure Layer**: Contains implementations of interfaces (adapters)
-- **Presentation Layer**: Contains user interfaces (CLI, API, etc.)
+- **Core (Domain Layer)**: Contains domain models and business rules
+- **Application Layer**: Implements use cases like transcription and speaker assignment
+- **Infrastructure Layer**: Provides concrete implementations of interfaces (OpenAI Whisper, Pyannote, GPT-4o)
+- **Presentation Layer**: Offers user interfaces (CLI, future REST API)
 
 For more details on the solution design and architecture, see the documentation:
 - [Core Architecture](docs/architecture/01_core_architecture.md)
@@ -115,19 +120,13 @@ HUGGINGFACE_API_KEY=your_huggingface_api_key
 
 ## Implemented Features
 
-### Output Formats
-PyHearingAI supports the following output formats:
-- **TXT**: Simple text format with speaker labels
-- **JSON**: Structured data with timestamps and metadata
-- **SRT**: Subtitle format with timestamps
-- **VTT**: WebVTT subtitle format
-- **Markdown**: Formatted markdown with speaker sections
-
-### Transcription Models
-- OpenAI Whisper API (default)
-
-### Diarization Models
-- Pyannote (default)
+- Multiple output formats (TXT, JSON, SRT, VTT, Markdown)
+- Transcription models:
+  - OpenAI Whisper API (default)
+- Diarization models:
+  - Pyannote
+- Speaker assignment models:
+  - GPT-4o (using OpenAI API)
 
 ## Features Under Development
 
