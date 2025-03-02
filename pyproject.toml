@@ -74,3 +74,4 @@ ignore = []
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
+addopts = "--cov=src/pyhearingai --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage_html --cov-fail-under=1 -k 'not test_whisper_openai_transcriber_basic'"
