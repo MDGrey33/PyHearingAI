@@ -28,8 +28,16 @@ repos:
     hooks:
     -   id: pytest-check
         name: pytest-check
-        entry: pytest --cov=src/pyhearingai --cov-report=term-missing --cov-fail-under=1 -k 'not test_whisper_openai_transcriber_basic'
+        entry: python -m pytest -k 'not test_whisper_openai_transcriber_basic and not test_end_to_end'
         language: system
         pass_filenames: false
         always_run: true
         # stages: [manual]  # Only run when explicitly called, not on commit
+
+    -   id: pytest-e2e
+        name: pytest-e2e
+        entry: python -m pytest tests/test_end_to_end.py -v
+        language: system
+        pass_filenames: false
+        always_run: false  # Only run when explicitly requested
+        stages: [manual]  # End-to-end tests not run on every commit

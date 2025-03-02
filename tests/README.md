@@ -1,28 +1,84 @@
-# PyHearingAI Tests
+# PyHearingAI Testing Infrastructure
 
-This directory contains tests for the PyHearingAI library.
+This directory contains the testing infrastructure for PyHearingAI.
+
+## Test Organization
+
+We organize tests in multiple layers:
+
+- **End-to-End Tests**: Located in the root `tests/` directory
+  - `test_end_to_end.py` - Tests the complete pipeline from audio to labeled transcript
+  - These tests are kept separate from other test infrastructure changes
+
+- **Unit Tests**: Located in `tests/unit/`
+  - Small, focused tests for individual components
+  - Mock external dependencies
+  - Fast execution
+
+- **Integration Tests**: Located in `tests/integration/`
+  - Test interaction between multiple components
+  - May use real external dependencies for some tests
+  - Validate component integration
+
+- **Fixtures & Utilities**:
+  - `fixtures/` - Contains test data files
+  - `conftest.py` - Contains pytest fixtures and test utilities
 
 ## Directory Structure
 
 - `fixtures/` - Contains test data files
   - `example_audio.m4a` - Sample audio file for testing
   - `labeled_transcript.txt` - Reference transcript for validation
-  - `diarization_segments.json` - Sample diarization output for testing
-  - `transcription_segments.json` - Sample transcription output for testing
+
+- `unit/` - Unit tests for individual components
+  - `test_audio_converter.py` - Tests for audio conversion
+  - `test_transcriber.py` - Tests for transcription services
+  - etc.
+
+- `integration/` - Integration tests between components
 
 ## Running Tests
 
-To run the tests, use the following command from the project root:
+To run specific test categories:
 
 ```bash
-python -m pytest tests/
+# Run all tests
+python -m pytest
+
+# Run only unit tests
+python -m pytest tests/unit/
+
+# Run only integration tests
+python -m pytest tests/integration/
+
+# Run only the end-to-end test
+python -m pytest tests/test_end_to_end.py
 ```
 
-For more verbose output:
+## Test Development Guidelines
 
-```bash
-python -m pytest tests/ -v
-```
+1. **Separation of Concerns**:
+   - E2E tests validate overall functionality
+   - Unit tests focus on individual components
+   - Keep these separate to allow independent development
+
+2. **Fixtures**:
+   - Use session-scoped fixtures for expensive resources
+   - Use function-scoped fixtures for isolated test states
+
+3. **Mocking**:
+   - Mock external APIs in unit tests
+   - Use dependency injection for easier mocking
+   - Consider partial mocking for integration tests
+
+4. **Test Independence**:
+   - Tests should not depend on the state from other tests
+   - Each test should set up its own state
+
+5. **Compliance**:
+   - We follow a phased approach to test compliance (see COMPLIANCE_ROADMAP.md)
+   - Current coverage requirement: 1%
+   - Target coverage: 80%
 
 ## End-to-End Test
 

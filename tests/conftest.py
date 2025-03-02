@@ -2,8 +2,21 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
+
+# Import our test helpers
+from tests.helpers import (
+    assert_segment_lists_equal,
+    assert_segments_equal,
+    create_segment,
+    create_segment_list,
+    create_temp_audio_file,
+    create_temp_dir,
+    mock_openai_client,
+    mock_pyannote_pipeline,
+)
 
 
 # Path fixtures
@@ -32,6 +45,71 @@ def temp_dir():
     temp_dir = tempfile.mkdtemp()
     yield Path(temp_dir)
     shutil.rmtree(temp_dir)
+
+
+@pytest.fixture
+def temp_audio_file():
+    """Create a temporary WAV file for testing."""
+    path, file_handle = create_temp_audio_file(suffix=".wav")
+
+    # Write some dummy content to make it a valid file
+    file_handle.write(
+        b"RIFF\x24\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x44\xac\x00\x00\x88X\x01\x00\x02\x00\x10\x00data\x00\x00\x00\x00"
+    )
+    file_handle.flush()
+
+    yield path
+
+    # Clean up
+    file_handle.close()
+    if path.exists():
+        path.unlink()
+
+
+# Domain model fixtures
+@pytest.fixture
+def transcript_segments():
+    """Return a list of transcript segments for testing."""
+    return [
+        create_segment(start=0.0, end=2.0, text="This is a test."),
+        create_segment(start=2.5, end=4.5, text="Testing the transcriber."),
+        create_segment(start=5.0, end=7.0, text="Final test segment."),
+    ]
+
+
+@pytest.fixture
+def diarization_segments():
+    """Return a list of diarization segments for testing."""
+    return [
+        create_segment(start=0.0, end=2.0, text="", speaker_id="SPEAKER_00"),
+        create_segment(start=2.5, end=4.5, text="", speaker_id="SPEAKER_01"),
+        create_segment(start=5.0, end=7.0, text="", speaker_id="SPEAKER_00"),
+    ]
+
+
+@pytest.fixture
+def labeled_segments():
+    """Return a list of segments with speaker labels for testing."""
+    return [
+        create_segment(start=0.0, end=2.0, text="This is a test.", speaker_id="SPEAKER_00"),
+        create_segment(
+            start=2.5, end=4.5, text="Testing the transcriber.", speaker_id="SPEAKER_01"
+        ),
+        create_segment(start=5.0, end=7.0, text="Final test segment.", speaker_id="SPEAKER_00"),
+    ]
+
+
+# Mock fixtures
+@pytest.fixture
+def mock_openai():
+    """Return a mock OpenAI client and transcription."""
+    return mock_openai_client()
+
+
+@pytest.fixture
+def mock_pyannote():
+    """Return a mock Pyannote Pipeline."""
+    return mock_pyannote_pipeline()
 
 
 # Utility functions
@@ -82,3 +160,49 @@ def calculate_similarity(text1, text2):
 def text_utils():
     """Return utility functions for text processing and comparison."""
     return {"clean_text": clean_text, "calculate_similarity": calculate_similarity}
+
+
+# Component fixtures
+@pytest.fixture
+def audio_converter():
+    """Return an initialized FFmpegAudioConverter."""
+    from pyhearingai.infrastructure.audio_converter import FFmpegAudioConverter
+
+    return FFmpegAudioConverter()
+
+
+@pytest.fixture
+def transcriber():
+    """Return an initialized WhisperOpenAITranscriber."""
+    from pyhearingai.infrastructure.transcribers.whisper_openai import WhisperOpenAITranscriber
+
+    return WhisperOpenAITranscriber()
+
+
+@pytest.fixture
+def diarizer():
+    """Return an initialized PyannoteDiarizer."""
+    from pyhearingai.infrastructure.diarizers.pyannote import PyannoteDiarizer
+
+    return PyannoteDiarizer()
+
+
+@pytest.fixture
+def speaker_assigner():
+    """Return an initialized DefaultSpeakerAssigner."""
+    from pyhearingai.infrastructure.speaker_assignment import DefaultSpeakerAssigner
+
+    return DefaultSpeakerAssigner()
+
+
+# Assertion helpers
+@pytest.fixture
+def assert_segments():
+    """Return the assert_segments_equal function."""
+    return assert_segments_equal
+
+
+@pytest.fixture
+def assert_segment_lists():
+    """Return the assert_segment_lists_equal function."""
+    return assert_segment_lists_equal
