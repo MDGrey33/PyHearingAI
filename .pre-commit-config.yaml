@@ -28,15 +28,18 @@ repos:
     hooks:
     -   id: pytest-check
         name: pytest-check
-        entry: python -m pytest -k 'not test_whisper_openai_transcriber_basic and not test_end_to_end'
+        entry: /Users/roland/code/PyHearingAI/venv/bin/python -m pytest tests/unit -k 'not test_whisper_openai_transcriber_basic'
         language: system
+        # additional_dependencies: ['pytest>=7.0.0', 'pytest-cov>=4.0.0']
         pass_filenames: false
         always_run: true
+        verbose: true
+        fail_fast: false
         # stages: [manual]  # Only run when explicitly called, not on commit
 
     -   id: pytest-e2e
         name: pytest-e2e
-        entry: python -m pytest tests/test_end_to_end.py -v
+        entry: /Users/roland/code/PyHearingAI/venv/bin/python -m pytest tests/test_end_to_end.py -v
         language: system
         pass_filenames: false
         always_run: false  # Only run when explicitly requested
