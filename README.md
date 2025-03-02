@@ -101,35 +101,18 @@ result.save("transcript.md")    # Markdown format
 
 ## Advanced Usage
 
-### Configuring Models and Parameters
+### Configuring the Transcription Process
 
 ```python
 from pyhearingai import transcribe
-from pyhearingai.models import TranscriptionConfig
 
-# Configure transcription with specific models
-config = TranscriptionConfig(
-    transcriber="whisper-openai",
-    diarizer="pyannote",
-    speaker_assigner="gpt-4o",
-    output_format="json",
-    language="en"
+# Configure transcription with specific options
+result = transcribe(
+    "interview.mp3",
+    transcriber="whisper_openai",  # Specify transcriber
+    diarizer="pyannote",           # Specify diarizer
+    verbose=True                   # Enable verbose output
 )
-
-# Process with specific configuration
-result = transcribe("interview.mp3", config=config)
-```
-
-### Handling Multiple Files Efficiently
-
-```python
-from pyhearingai import pipeline_session
-
-# Process multiple files with resource reuse
-with pipeline_session(config) as session:
-    result1 = session.transcribe("file1.mp3")
-    result2 = session.transcribe("file2.mp3")
-    # Resources are efficiently managed
 ```
 
 ### Progress Tracking
@@ -143,39 +126,6 @@ def progress_callback(progress_info):
 result = transcribe(
     "long_recording.mp3",
     progress_callback=progress_callback
-)
-```
-
-### Error Handling
-
-```python
-from pyhearingai.exceptions import TranscriptionError, DiarizationError, AudioProcessingError, SpeakerAssignmentError
-
-try:
-    result = transcribe("meeting.mp3")
-except AudioProcessingError as e:
-    print(f"Audio processing failed: {e}")
-except TranscriptionError as e:
-    print(f"Transcription failed: {e}")
-    # You might still have partial results
-    if hasattr(e, 'partial'):
-        print(f"Partial transcript: {e.partial.text}")
-except DiarizationError as e:
-    print(f"Speaker diarization failed: {e}")
-except SpeakerAssignmentError as e:
-    print(f"Speaker assignment failed: {e}")
-```
-
-### Processing Large Files
-
-```python
-# For large files, process in chunks
-from pyhearingai import transcribe_chunked
-
-result = transcribe_chunked(
-    "very_long_meeting.mp3",
-    chunk_size_seconds=600,  # Process 10-minute chunks
-    overlap_seconds=30       # Overlap chunks by 30 seconds
 )
 ```
 
@@ -198,24 +148,6 @@ json_formatter = get_output_formatter('json')
 json_content = json_formatter.format(result)
 with open("transcript.json", "w") as f:
     f.write(json_content)
-```
-
-### Memory Management
-
-For applications processing numerous files or very large files:
-
-```python
-# Set memory usage limits
-from pyhearingai.config import set_memory_limit
-
-# Limit total memory usage to 4GB
-set_memory_limit(4096)  # In MB
-
-# Clean up resources when done
-from pyhearingai import cleanup_resources
-
-# After processing several files
-cleanup_resources()
 ```
 
 ## Command Line Interface
