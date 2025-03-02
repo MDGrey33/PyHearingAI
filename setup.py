@@ -16,4 +16,4 @@ if __name__ == "__main__":
             "Or even better, use Poetry:\n\n"
             "    poetry install\n\n"
         )
-        raise 
+        raise

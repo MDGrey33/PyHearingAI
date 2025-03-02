@@ -23,6 +23,9 @@ PyHearingAI follows Clean Architecture principles with a well-organized code str
   - Markdown
 - Clean Architecture design for maintainability and extensibility
 - End-to-end testing framework
+- Progress tracking for long-running processes
+- Comprehensive error handling
+- Command-line interface
 
 ## Requirements
 
@@ -34,6 +37,21 @@ PyHearingAI follows Clean Architecture principles with a well-organized code str
 
 ## Installation
 
+### System Dependencies
+
+First, install FFmpeg:
+
+```bash
+# macOS
+brew install ffmpeg
+
+# Ubuntu/Debian
+sudo apt-get install ffmpeg
+
+# Windows (using Chocolatey)
+choco install ffmpeg
+```
+
 ### Using Poetry (Recommended)
 ```bash
 poetry add pyhearingai
@@ -42,6 +60,24 @@ poetry add pyhearingai
 ### Using pip
 ```bash
 pip install pyhearingai
+```
+
+## API Key Setup
+
+Set up your API keys as environment variables:
+
+```bash
+# In your terminal or .env file
+export OPENAI_API_KEY=your_openai_api_key
+export HUGGINGFACE_API_KEY=your_huggingface_api_key
+```
+
+Or in your Python code:
+
+```python
+import os
+os.environ["OPENAI_API_KEY"] = "your_openai_api_key"
+os.environ["HUGGINGFACE_API_KEY"] = "your_huggingface_api_key"
 ```
 
 ## Quick Start
@@ -53,27 +89,152 @@ from pyhearingai import transcribe
 # Process an audio file with default settings
 result = transcribe("meeting.mp3")
 
-# Process with specific models
-result = transcribe(
-    audio_path="meeting.mp3",
-    transcriber="whisper_openai",
+# Print the full transcript with speaker labels
+print(result.text)
+
+# Save in different formats
+result.save("transcript.txt")  # Plain text
+result.save("transcript.json")  # JSON with segments, timestamps
+result.save("transcript.srt")   # Subtitle format
+result.save("transcript.md")    # Markdown format
+```
+
+## Advanced Usage
+
+### Configuring Models and Parameters
+
+```python
+from pyhearingai import transcribe
+from pyhearingai.models import TranscriptionConfig
+
+# Configure transcription with specific models
+config = TranscriptionConfig(
+    transcriber="whisper-openai",
     diarizer="pyannote",
-    verbose=True
+    speaker_assigner="gpt-4o",
+    output_format="json",
+    language="en"
 )
 
+# Process with specific configuration
+result = transcribe("interview.mp3", config=config)
+```
+
+### Handling Multiple Files Efficiently
+
+```python
+from pyhearingai import pipeline_session
+
+# Process multiple files with resource reuse
+with pipeline_session(config) as session:
+    result1 = session.transcribe("file1.mp3")
+    result2 = session.transcribe("file2.mp3")
+    # Resources are efficiently managed
+```
+
+### Progress Tracking
+
+```python
+def progress_callback(progress_info):
+    stage = progress_info.get('stage', 'unknown')
+    percent = progress_info.get('progress', 0) * 100
+    print(f"Processing {stage}: {percent:.1f}% complete")
+
+result = transcribe(
+    "long_recording.mp3",
+    progress_callback=progress_callback
+)
+```
+
+### Error Handling
+
+```python
+from pyhearingai.exceptions import TranscriptionError, DiarizationError, AudioProcessingError, SpeakerAssignmentError
+
+try:
+    result = transcribe("meeting.mp3")
+except AudioProcessingError as e:
+    print(f"Audio processing failed: {e}")
+except TranscriptionError as e:
+    print(f"Transcription failed: {e}")
+    # You might still have partial results
+    if hasattr(e, 'partial'):
+        print(f"Partial transcript: {e.partial.text}")
+except DiarizationError as e:
+    print(f"Speaker diarization failed: {e}")
+except SpeakerAssignmentError as e:
+    print(f"Speaker assignment failed: {e}")
+```
+
+### Processing Large Files
+
+```python
+# For large files, process in chunks
+from pyhearingai import transcribe_chunked
+
+result = transcribe_chunked(
+    "very_long_meeting.mp3",
+    chunk_size_seconds=600,  # Process 10-minute chunks
+    overlap_seconds=30       # Overlap chunks by 30 seconds
+)
+```
+
+### Working with Results
+
+```python
 # Access the segments
 for segment in result.segments:
     print(f"Speaker {segment.speaker_id}: {segment.text}")
-    
+    print(f"Time: {segment.start:.2f}s - {segment.end:.2f}s")
+
 # Available output formats
 from pyhearingai import list_output_formatters, get_output_formatter
 
 # List available formatters
 formatters = list_output_formatters()  # ['txt', 'json', 'srt', 'vtt', 'md']
 
-# Get a specific formatter and save output
+# Get a specific formatter and format output
 json_formatter = get_output_formatter('json')
-json_formatter.save(result, "transcript.json")
+json_content = json_formatter.format(result)
+with open("transcript.json", "w") as f:
+    f.write(json_content)
+```
+
+### Memory Management
+
+For applications processing numerous files or very large files:
+
+```python
+# Set memory usage limits
+from pyhearingai.config import set_memory_limit
+
+# Limit total memory usage to 4GB
+set_memory_limit(4096)  # In MB
+
+# Clean up resources when done
+from pyhearingai import cleanup_resources
+
+# After processing several files
+cleanup_resources()
+```
+
+## Command Line Interface
+
+PyHearingAI includes a command-line interface:
+
+```bash
+# Basic usage
+pyhearingai transcribe meeting.mp3
+
+# Specify output format
+pyhearingai transcribe meeting.mp3 --output transcript.txt
+
+# Configure models
+pyhearingai transcribe meeting.mp3 --transcriber whisper-openai --diarizer pyannote --speaker-assigner gpt-4o
+
+# Get help
+pyhearingai --help
+pyhearingai transcribe --help
 ```
 
 ## Testing
@@ -106,12 +267,118 @@ For more details on the solution design and architecture, see the documentation:
 - [Core Architecture](docs/architecture/01_core_architecture.md)
 - [Solution Design](docs/architecture/02_solution_design.md)
 
+## Extending PyHearingAI
+
+The library is designed for extensibility:
+
+### Custom Transcriber
+
+```python
+from pyhearingai.extensions import register_transcriber
+from pyhearingai.models import Transcriber
+
+@register_transcriber("my-transcriber")
+class MyTranscriber(Transcriber):
+    def transcribe(self, audio_path, **kwargs):
+        # Custom transcription logic
+        return segments
+```
+
+### Custom Diarizer
+
+```python
+from pyhearingai.extensions import register_diarizer
+from pyhearingai.models import Diarizer
+
+@register_diarizer("my-diarizer")
+class MyDiarizer(Diarizer):
+    def diarize(self, audio_path, **kwargs):
+        # Custom diarization logic
+        return speaker_segments
+```
+
+### Custom Speaker Assigner
+
+```python
+from pyhearingai.extensions import register_speaker_assigner
+from pyhearingai.models import SpeakerAssigner
+
+@register_speaker_assigner("my-assigner")
+class MySpeakerAssigner(SpeakerAssigner):
+    def assign_speakers(self, transcript_segments, diarization_segments, **kwargs):
+        # Custom speaker assignment logic
+        return labeled_segments
+```
+
+### Custom Output Format
+
+```python
+from pyhearingai.extensions import register_output_formatter
+from pyhearingai.models import OutputFormatter
+
+@register_output_formatter("my-format")
+class MyOutputFormatter(OutputFormatter):
+    def format(self, result):
+        # Custom formatting logic
+        return formatted_output
+```
+
+## Logging
+
+Configure logging to control verbosity:
+
+```python
+import logging
+logging.basicConfig(level=logging.INFO)
+
+# Set specific logger levels
+logging.getLogger('pyhearingai.transcription').setLevel(logging.DEBUG)
+logging.getLogger('pyhearingai.diarization').setLevel(logging.WARNING)
+```
+
+## Directory Structure
+
+The library creates the following directory structure for outputs:
+
+```
+content/
+├── audio_conversion/    # Converted audio files
+├── transcription/       # Transcription results
+├── diarization/         # Speaker diarization results
+└── speaker_assignment/  # Final output with speaker labels
+```
+
+## Privacy and Data Handling
+
+When using PyHearingAI, be aware that:
+
+- Audio data is sent to third-party APIs (OpenAI and Hugging Face)
+- OpenAI's data usage policies apply to audio sent for transcription
+- Hugging Face's data usage policies apply to audio sent for diarization
+- Consider data processing agreements when processing sensitive information
+
+## API Rate Limits and Quotas
+
+Users should be aware of:
+- OpenAI has rate limits for the Whisper API (requests per minute)
+- GPT-4o has token limits per request and rate limits
+- Hugging Face API may have usage quotas
+
 ## Environment Variables
 
 Required environment variables:
 ```
 OPENAI_API_KEY=your_openai_api_key
 HUGGINGFACE_API_KEY=your_huggingface_api_key
+```
+
+Optional environment variables:
+```
+PYHEARINGAI_DEFAULT_TRANSCRIBER=whisper-openai
+PYHEARINGAI_DEFAULT_DIARIZER=pyannote
+PYHEARINGAI_DEFAULT_SPEAKER_ASSIGNER=gpt-4o
+PYHEARINGAI_OUTPUT_DIR=./content
+PYHEARINGAI_LOG_LEVEL=INFO
 ```
 
 ## License
@@ -130,7 +397,7 @@ HUGGINGFACE_API_KEY=your_huggingface_api_key
 
 ## Features Under Development
 
-- 🎛️ **Extended Model Support**: 
+- 🎛️ **Extended Model Support**:
   - Local Whisper models
   - Faster Whisper
   - Additional diarization models
@@ -146,6 +413,6 @@ We welcome contributions! Please check our [GitHub repository](https://github.co
 
 ## Acknowledgments
 
-- OpenAI for the Whisper model
+- OpenAI for the Whisper and GPT models
 - Pyannote for the diarization technology
 - The open-source community for various contributions

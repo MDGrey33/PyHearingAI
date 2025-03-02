@@ -122,4 +122,4 @@ The migration will be considered successful when:
 1. All current functionality is preserved
 2. End-to-end tests pass with at least 80% similarity
 3. Documentation is complete
-4. The codebase adheres to Clean Architecture principles 
+4. The codebase adheres to Clean Architecture principles

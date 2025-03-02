@@ -14,52 +14,51 @@ from pyhearingai.core.models import TranscriptionResult
 from pyhearingai.core.ports import OutputFormatter
 from pyhearingai.infrastructure.registry import register_output_formatter
 
-
 logger = logging.getLogger(__name__)
 
 
 @register_output_formatter("txt")
 class TextFormatter(OutputFormatter):
     """Output formatter implementation for plain text format."""
-    
+
     @property
     def format_name(self) -> str:
         """Get the name of the format."""
         return "txt"
-    
+
     def format(self, result: TranscriptionResult, **kwargs) -> str:
         """
         Format a transcription result as plain text.
-        
+
         Args:
             result: The transcription result to format
             **kwargs: Additional formatting options
-        
+
         Returns:
             Plain text representation of the transcription result
         """
         return to_text(result)
-    
+
     def save(self, result: TranscriptionResult, path: Path, **kwargs) -> Path:
         """
         Save a transcription result to a text file.
-        
+
         Args:
             result: The transcription result to save
             path: Path to save the file to
             **kwargs: Additional saving options
-        
+
         Returns:
             Path to the saved file
         """
         # Ensure parent directory exists
         path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Format the transcription as text
         text_content = self.format(result, **kwargs)
-        
+
         # Write to file
         path.write_text(text_content, encoding="utf-8")
-        
+
         logger.debug(f"Saved transcription to text file: {path}")
-        return path 
+        return path

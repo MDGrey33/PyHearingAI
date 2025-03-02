@@ -36,7 +36,7 @@ def transcribe(
 ) -> TranscriptionResult:
     """
     Transcribe audio with speaker identification.
-    
+
     Args:
         audio: Path to audio file, bytes, or file-like object
         transcriber: Transcription model to use (name or config dict)
@@ -44,7 +44,7 @@ def transcribe(
         speaker_assigner: Speaker assignment model to use (name or config dict)
         output_format: Output format (txt, json, srt, vtt, md)
         progress_callback: Function to call with progress updates
-        
+
     Returns:
         TranscriptionResult object with the results
     """
@@ -61,12 +61,12 @@ def pipeline_session(
 ):
     """
     Create a reusable pipeline session for multiple transcriptions.
-    
+
     Args:
         transcriber: Transcription model name or config dict
         diarizer: Diarization model name or config dict
         options: Additional options for the pipeline
-        
+
     Yields:
         Session object with transcribe method
     """
@@ -85,20 +85,20 @@ def pipeline_session(
 ```python
 class TranscriptionResult:
     """Holds transcription results with speaker information."""
-    
+
     text: str  # Complete transcript
     speakers: List[str]  # List of speaker names/ids
     segments: List[Segment]  # Detailed segment information
-    
+
     def save(self, path: Union[str, Path], **options) -> None:
         """Save transcript to a file in the format specified by extension."""
-        
+
     def to_dict(self) -> dict:
         """Convert result to a dictionary."""
-        
+
     def to_str(self, format_name: str = "text") -> str:
         """Convert result to string using specified format."""
-        
+
     @property
     def duration(self) -> float:
         """Total duration of the audio in seconds."""
@@ -139,8 +139,8 @@ result = transcribe(
 ```python
 def progress_handler(info):
     print(f"Stage: {info['stage']}, Progress: {info['progress']:.0%}")
-    
-result = transcribe("long_recording.mp3", 
+
+result = transcribe("long_recording.mp3",
                    progress_callback=progress_handler)
 ```
 
@@ -201,11 +201,11 @@ class MySpeakerAssigner(SpeakerAssigner):
 def reduce_noise(audio, config=None):
     """
     Custom audio preprocessing.
-    
+
     Args:
         audio: Raw audio data
         config: Optional configuration dictionary
-        
+
     Returns:
         Processed audio data
     """
@@ -220,11 +220,11 @@ def reduce_noise(audio, config=None):
 def custom_format(result, options=None):
     """
     Custom output format.
-    
+
     Args:
         result: TranscriptionResult object
         options: Optional formatting options
-        
+
     Returns:
         Formatted string
     """

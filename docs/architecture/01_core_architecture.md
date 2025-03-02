@@ -113,16 +113,16 @@ def my_format(result, options=None):
 def transcribe(audio, **options):
     # 1. Load and validate the audio
     audio_data = load_audio(audio)
-    
+
     # 2. Process audio (conversion, normalization)
     processed = process_audio(audio_data, options)
-    
+
     # 3. Transcribe audio
     transcript = run_transcription(processed, options)
-    
+
     # 4. Identify speakers
     speakers = run_diarization(processed, options)
-    
+
     # 5. Combine results
     return create_result(transcript, speakers)
 ```
@@ -174,4 +174,4 @@ except TranscriptionError as e:
     if e.partial:
         # Use partial results
         print(e.partial.text)
-``` 
+```
