@@ -99,6 +99,55 @@ def labeled_segments():
     ]
 
 
+# Formatter test fixtures
+@pytest.fixture
+def formatter_segments_with_speakers():
+    """Return a list of segments with speaker IDs for formatter testing."""
+    return [
+        create_segment(start=0.0, end=2.0, text="This is segment one.", speaker_id="Speaker 1"),
+        create_segment(start=2.5, end=4.5, text="This is segment two.", speaker_id="Speaker 2"),
+        create_segment(start=5.0, end=7.0, text="This is segment three.", speaker_id="Speaker 1"),
+    ]
+
+
+@pytest.fixture
+def formatter_segments_without_speakers():
+    """Return a list of segments without speaker IDs for formatter testing."""
+    return [
+        create_segment(start=0.0, end=2.0, text="This is segment one.", speaker_id=None),
+        create_segment(start=2.5, end=4.5, text="This is segment two.", speaker_id=None),
+    ]
+
+
+@pytest.fixture
+def formatter_single_segment():
+    """Return a single segment for simple formatter tests."""
+    return [
+        create_segment(start=0.0, end=2.0, text="This is a test segment.", speaker_id="Speaker 1"),
+    ]
+
+
+@pytest.fixture
+def test_transcription_result(request):
+    """Create a TranscriptionResult with specified segments.
+
+    Usage:
+        test_transcription_result(formatter_segments_with_speakers)
+        test_transcription_result(formatter_segments_without_speakers)
+        test_transcription_result(formatter_single_segment)
+    """
+    from pyhearingai.core.models import TranscriptionResult
+
+    # Get the segments from the provided fixture
+    segments = request.getfixturevalue(request.param)
+
+    # Create a transcription result with optional metadata
+    result = TranscriptionResult(
+        segments=segments, audio_path=Path("test_audio.wav"), metadata={"test": True}
+    )
+    return result
+
+
 # Mock fixtures
 @pytest.fixture
 def mock_openai():
