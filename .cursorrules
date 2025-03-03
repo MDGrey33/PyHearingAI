@@ -98,6 +98,40 @@ PyVisionAI Project-Specific Guidelines
   - Mock external API calls in vision model tests
   - Implement proper cleanup of test artifacts
   - Maintain high test coverage (>80%)
+  - Follow Test Quality Best Practices:
+    - Structure tests using Arrange-Act-Assert (AAA) pattern
+    - Write comprehensive test documentation with Given-When-Then scenarios
+    - Include custom assertion messages for clear failure diagnosis
+    - Test edge cases and error conditions systematically
+    - Ensure test independence and proper resource cleanup
+    - Use property-based testing for data transformations
+    - Implement integration tests between components
+    - Follow consistent naming patterns (test_[unit]_[scenario]_[expected])
+  - Test Documentation Requirements:
+    - Each test must have a clear docstring explaining:
+      - Purpose of the test
+      - Input conditions and assumptions
+      - Expected outcomes
+      - Any special setup or teardown requirements
+    - Include examples in docstrings for complex scenarios
+  - Test Data Management:
+    - Use parameterized tests for multiple scenarios
+    - Create comprehensive fixture factories
+    - Include edge cases in test data
+    - Test internationalization scenarios
+  - Error Testing Requirements:
+    - Test all error paths and exception handling
+    - Verify error messages and error codes
+    - Test system behavior under resource constraints
+    - Validate cleanup after errors
+  - Performance Testing:
+    - Include performance benchmarks where relevant
+    - Test resource cleanup and memory management
+    - Verify scalability with larger datasets
+  - Integration Testing:
+    - Test component interactions
+    - Verify end-to-end workflows
+    - Test system boundaries and external integrations
 
 - Package Distribution
   - Support multiple installation methods (pip, poetry, homebrew)
