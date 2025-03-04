@@ -74,7 +74,7 @@ ignore = []
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
-addopts = "--cov=src/pyhearingai --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage_html --cov-fail-under=1"
+addopts = "--cov=src/pyhearingai --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage_html --cov-fail-under=89.5"
 markers = [
     "unit: mark a test as a unit test",
     "integration: mark a test as an integration test",
