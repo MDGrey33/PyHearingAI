@@ -9,6 +9,7 @@ maintaining compatibility with the original implementation.
 import json
 import logging
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -101,6 +102,7 @@ class GPTSpeakerAssigner(SpeakerAssigner):
 
         # Prepare the prompt for GPT
         prompt = f"""Provide the transcribed dialogue with clear speaker distinctions based on the transcript and segments.
+        Use your comprehension of the conversation and the expected amount of speakers to decide where to split the segments.
 
 Transcript:
 {transcript}
@@ -167,14 +169,72 @@ Speaker Segments:
             f.write(prompt)
             f.write("\n" + "-" * 40 + "\n")
 
-        # Since we need to maintain compatibility with the domain model,
-        # we need to create Segment objects with speaker_id set
-        # This is somewhat artificial since the real output is the labeled_transcript
-        # file, but we need to return something for the interface
-        result_segments = []
-        for segment in transcript_segments:
-            # Just return the original segments - the actual output is in the files
-            result_segments.append(segment)
+        # Parse the GPT response to extract speaker assignments
+        try:
+            # Look for speaker labels in the markdown-formatted response
+            speaker_pattern = re.compile(
+                r"\*\*Speaker (\d+):\*\* (.*?)(?=\n\*\*Speaker \d+:|$)", re.DOTALL
+            )
+            speaker_matches = speaker_pattern.findall(labeled_transcript)
+
+            # Create a mapping of text to speaker ID
+            text_to_speaker = {}
+            for speaker_num, text in speaker_matches:
+                # Clean up the text
+                clean_text = text.strip()
+                text_to_speaker[clean_text] = f"Speaker {speaker_num}"
+
+            # Match segments with extracted speaker labels based on text content
+            for segment in transcript_segments:
+                segment_text = segment.text.strip()
+
+                # Try exact matching first
+                if segment_text in text_to_speaker:
+                    segment.speaker_id = text_to_speaker[segment_text]
+                    continue
+
+                # If exact match fails, try substring matching
+                # First, try if the segment text is contained within any labeled text
+                for labeled_text, speaker_id in text_to_speaker.items():
+                    if segment_text in labeled_text:
+                        segment.speaker_id = speaker_id
+                        break
+
+                # If that fails, try if any labeled text is contained within the segment text
+                if not segment.speaker_id:
+                    for labeled_text, speaker_id in text_to_speaker.items():
+                        if labeled_text in segment_text:
+                            segment.speaker_id = speaker_id
+                            break
+
+            # Secondary parsing strategy: look for JSON in the response
+            json_matches = re.findall(r"```json\n(.*?)```", labeled_transcript, re.DOTALL)
+            if json_matches and any(segment.speaker_id is None for segment in transcript_segments):
+                try:
+                    # Clean up the JSON text before parsing
+                    json_text = json_matches[0].strip()
+                    # Handle potential formatting issues
+                    json_text = re.sub(r",\s*]", "]", json_text)  # Remove trailing commas
+                    segment_mapping = json.loads(json_text)
+
+                    # Apply speaker IDs to segments that don't have one yet
+                    for mapping in segment_mapping:
+                        segment_index = mapping.get("segment_index")
+                        speaker = mapping.get("speaker")
+
+                        if (
+                            segment_index is not None
+                            and speaker
+                            and segment_index < len(transcript_segments)
+                            and transcript_segments[segment_index].speaker_id is None
+                        ):
+                            transcript_segments[segment_index].speaker_id = str(speaker)
+                except Exception as e:
+                    logger.warning(f"Error parsing JSON in GPT response: {e}")
+
+        except Exception as e:
+            logger.warning(f"Error parsing GPT response: {e}")
+            logger.warning("Speaker assignments may be incomplete")
 
         logger.info(f"Speaker assignment completed. Results saved to {output_dir}")
-        return result_segments
+        return transcript_segments

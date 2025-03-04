@@ -92,6 +92,31 @@ def transcribe(
     merged_segments = assigner.assign_speakers(transcript_segments, diarization_segments, **kwargs)
 
     # 5. Create and return result
+    # Sanitize options to remove sensitive information
+    safe_options = {}
+
+    # First level sanitization
+    for k, v in kwargs.items():
+        if not any(
+            sensitive in k.lower()
+            for sensitive in ["api_key", "key", "token", "secret", "password"]
+        ):
+            # For dictionary values, we need to sanitize them as well
+            if isinstance(v, dict):
+                # Second level sanitization for nested dictionaries
+                sanitized_value = {
+                    sub_k: sub_v
+                    for sub_k, sub_v in v.items()
+                    if not any(
+                        sensitive in sub_k.lower()
+                        for sensitive in ["api_key", "key", "token", "secret", "password"]
+                    )
+                }
+                if sanitized_value:  # Only add if there's something left after sanitization
+                    safe_options[k] = sanitized_value
+            else:
+                safe_options[k] = v
+
     result = TranscriptionResult(
         segments=merged_segments,
         audio_path=audio_path,
@@ -99,7 +124,7 @@ def transcribe(
             "transcriber": transcriber,
             "diarizer": diarizer,
             "duration": merged_segments[-1].end if merged_segments else 0,
-            "options": kwargs,
+            "options": safe_options,
         },
     )
 

@@ -273,3 +273,43 @@ def test_kwargs_forwarding(mock_providers, tmp_path):
     mock_providers["transcriber"].transcribe.assert_called_with(Path("converted.wav"), **kwargs)
     mock_providers["diarizer"].diarize.assert_called_with(Path("converted.wav"), **kwargs)
     assert result.metadata["options"] == kwargs
+
+
+def test_api_key_sanitization(mock_providers, tmp_path):
+    """
+    Test sanitization of API keys in metadata.
+
+    Given: Kwargs containing API keys
+    When: Transcribing an audio file
+    Then: The API keys are not included in the result metadata
+    """
+    # Arrange
+    input_file = tmp_path / "test.wav"
+    input_file.touch()
+    kwargs = {
+        "api_key": "sk-1234567890abcdef",
+        "huggingface_api_key": "hf_1234567890abcdef",
+        "safe_option": "this_should_remain",
+        "speaker_assigner_options": {"api_key": "sk-nested1234567890", "model": "gpt-4o"},
+    }
+
+    # Act
+    result = transcribe(input_file, **kwargs)
+
+    # Assert
+    # Verify all kwargs are forwarded to providers (including API keys)
+    mock_providers["converter"].convert.assert_called_with(input_file, **kwargs)
+    mock_providers["transcriber"].transcribe.assert_called_with(Path("converted.wav"), **kwargs)
+    mock_providers["diarizer"].diarize.assert_called_with(Path("converted.wav"), **kwargs)
+
+    # Verify API keys are sanitized in metadata
+    assert "options" in result.metadata
+    metadata_options = result.metadata["options"]
+    assert "api_key" not in metadata_options
+    assert "huggingface_api_key" not in metadata_options
+    assert metadata_options["safe_option"] == "this_should_remain"
+
+    # Check nested options
+    assert "speaker_assigner_options" in metadata_options
+    assert "api_key" not in metadata_options["speaker_assigner_options"]
+    assert metadata_options["speaker_assigner_options"]["model"] == "gpt-4o"

@@ -42,6 +42,33 @@ def sample_result():
     return TranscriptionResult(segments=segments, metadata={"duration": 5.5, "language": "en"})
 
 
+@pytest.fixture
+def sample_result_with_api_keys():
+    """
+    Create a sample TranscriptionResult with sensitive API keys in metadata.
+
+    Returns:
+        TranscriptionResult: A sample result with API keys that should be sanitized.
+    """
+    segments = [
+        Segment(text="Hello, this is speaker one.", start=0.0, end=2.5, speaker_id="Speaker 1"),
+        Segment(text="This segment has no speaker assigned.", start=3.0, end=5.5, speaker_id=None),
+    ]
+
+    metadata = {
+        "duration": 5.5,
+        "language": "en",
+        "options": {
+            "api_key": "sk-12345abcdef",
+            "transcriber": "whisper_openai",
+            "speaker_assigner_options": {"api_key": "sk-67890ghijkl", "model": "gpt-4o"},
+            "safe_option": "this_should_remain",
+        },
+    }
+
+    return TranscriptionResult(segments=segments, metadata=metadata)
+
+
 class TestTimeFormatting:
     """Tests for the time formatting helper functions."""
 
@@ -108,6 +135,26 @@ class TestFormatters:
         assert data["metadata"]["duration"] == 5.5
         assert data["segments"][0]["speaker_id"] == "Speaker 1"
         assert data["segments"][1]["speaker_id"] is None
+
+    def test_to_json_sanitizes_api_keys(self, sample_result_with_api_keys):
+        """Test that to_json sanitizes API keys from metadata."""
+        result = to_json(sample_result_with_api_keys)
+        # Parse the JSON to verify its structure
+        data = json.loads(result)
+
+        assert "metadata" in data
+        assert "options" in data["metadata"]
+
+        # Check that API keys are removed
+        assert "api_key" not in data["metadata"]["options"]
+
+        # Check that nested API keys are removed
+        assert "speaker_assigner_options" in data["metadata"]["options"]
+        assert "api_key" not in data["metadata"]["options"]["speaker_assigner_options"]
+
+        # Check that safe options are preserved
+        assert data["metadata"]["options"]["safe_option"] == "this_should_remain"
+        assert data["metadata"]["options"]["speaker_assigner_options"]["model"] == "gpt-4o"
 
     def test_to_srt(self, sample_result):
         """Test conversion to SRT subtitle format."""

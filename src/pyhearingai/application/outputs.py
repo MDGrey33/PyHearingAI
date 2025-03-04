@@ -74,14 +74,48 @@ def to_json(result: TranscriptionResult) -> str:
     Returns:
         JSON string representation
     """
+    # Create a sanitized copy of metadata without sensitive information
+    sanitized_metadata = {
+        key: value for key, value in result.metadata.items() if key not in ["options"]
+    }
+
+    # If options exist, create a sanitized version without API keys
+    if "options" in result.metadata:
+        # First level sanitization
+        sanitized_options = {}
+        for key, value in result.metadata["options"].items():
+            if not any(
+                sensitive in key.lower()
+                for sensitive in ["api_key", "key", "token", "secret", "password"]
+            ):
+                # For dictionary values, we need to sanitize them as well
+                if isinstance(value, dict):
+                    # Second level sanitization for nested dictionaries
+                    sanitized_value = {
+                        k: v
+                        for k, v in value.items()
+                        if not any(
+                            sensitive in k.lower()
+                            for sensitive in ["api_key", "key", "token", "secret", "password"]
+                        )
+                    }
+                    if sanitized_value:  # Only add if there's something left after sanitization
+                        sanitized_options[key] = sanitized_value
+                else:
+                    sanitized_options[key] = value
+
+        # Only add options if there's something left after sanitization
+        if sanitized_options:
+            sanitized_metadata["options"] = sanitized_options
+
     data = {
-        "metadata": result.metadata,
+        "metadata": sanitized_metadata,
         "segments": [
             {
                 "text": segment.text,
                 "start": segment.start,
                 "end": segment.end,
-                "speaker_id": segment.speaker_id,
+                "speaker_id": str(segment.speaker_id) if segment.speaker_id is not None else None,
             }
             for segment in result.segments
         ],
