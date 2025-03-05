@@ -22,9 +22,9 @@ def main():
         description="PyHearingAI - Transcribe audio with speaker diarization",
         epilog="""
 Examples:
-  pyhearingai recording.mp3                  # Transcribe using default settings
-  pyhearingai -s recording.mp3 -o output.txt # Specify source and output
-  pyhearingai recording.mp3 -f json          # Output in JSON format
+  transcribe recording.mp3                  # Transcribe using default settings
+  transcribe -s recording.mp3 -o output.txt # Specify source and output
+  transcribe recording.mp3 -f json          # Output in JSON format
 
 Supported models:
   Transcriber: whisper_openai (default) - Uses OpenAI's Whisper API

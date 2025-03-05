@@ -44,7 +44,7 @@ ruff = "^0.1.0"
 gpu = ["torch"]
 
 [tool.poetry.scripts]
-pyhearingai = "pyhearingai.cli:main"
+transcribe = "pyhearingai.cli:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

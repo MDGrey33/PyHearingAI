@@ -53,17 +53,17 @@ PyHearingAI provides a simple command-line interface for transcribing audio file
 ### Basic Usage
 
 ```bash
-# Basic usage with positional argument
-pyhearingai meeting.mp3
+# Basic usage
+transcribe meeting.mp3
 
-# Alternative syntax with source flag
-pyhearingai -s meeting.mp3
+# With source flag
+transcribe -s meeting.mp3
 
-# Specify output file
-pyhearingai meeting.mp3 -o transcript.txt
+# Specifying output file
+transcribe meeting.mp3 -o transcript.txt
 
-# Specify output format
-pyhearingai meeting.mp3 -f json
+# Output in different formats
+transcribe meeting.mp3 -f json
 ```
 
 ### API Keys
@@ -74,38 +74,39 @@ API keys can be provided either as environment variables or command-line argumen
 # Using environment variables (recommended)
 export OPENAI_API_KEY="your_openai_api_key"
 export HUGGINGFACE_API_KEY="your_huggingface_api_key"
-pyhearingai meeting.mp3
+transcribe meeting.mp3
 
 # Or using command-line arguments
-pyhearingai meeting.mp3 --openai-key "your_openai_api_key" --huggingface-key "your_huggingface_api_key"
+transcribe meeting.mp3 --openai-key "your_openai_api_key" --huggingface-key "your_huggingface_api_key"
 ```
 
-### Output Formats
+### Supported Output Formats
 
-The CLI supports multiple output formats:
+PyHearingAI can output transcriptions in multiple formats:
 
 ```bash
-# Generate text output (default)
-pyhearingai meeting.mp3 -f txt
+# Standard text output (default)
+transcribe meeting.mp3 -f txt
 
-# Generate JSON output
-pyhearingai meeting.mp3 -f json
+# JSON output with detailed information
+transcribe meeting.mp3 -f json
 
-# Generate SRT subtitles
-pyhearingai meeting.mp3 -f srt
+# SRT subtitle format
+transcribe meeting.mp3 -f srt
 
-# Generate VTT subtitles
-pyhearingai meeting.mp3 -f vtt
+# VTT subtitle format
+transcribe meeting.mp3 -f vtt
 
-# Generate Markdown output
-pyhearingai meeting.mp3 -f md
+# Markdown format
+transcribe meeting.mp3 -f md
 ```
 
-### Advanced Options
+### Verbose Mode
+
+Enable verbose mode for detailed logging:
 
 ```bash
-# Enable verbose output
-pyhearingai meeting.mp3 --verbose
+transcribe meeting.mp3 --verbose
 ```
 
 ## Architecture Benefits

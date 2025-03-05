@@ -156,17 +156,16 @@ PyHearingAI includes a command-line interface:
 
 ```bash
 # Basic usage
-pyhearingai transcribe meeting.mp3
+transcribe meeting.mp3
 
 # Specify output format
-pyhearingai transcribe meeting.mp3 --output transcript.txt
+transcribe meeting.mp3 --output transcript.txt
 
 # Configure models
-pyhearingai transcribe meeting.mp3 --transcriber whisper-openai --diarizer pyannote --speaker-assigner gpt-4o
+transcribe meeting.mp3 --transcriber whisper-openai --diarizer pyannote --speaker-assigner gpt-4o
 
 # Get help
-pyhearingai --help
-pyhearingai transcribe --help
+transcribe --help
 ```
 
 ## Testing

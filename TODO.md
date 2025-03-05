@@ -13,7 +13,7 @@
 ### CLI Installation
 - [ ] Ensure the CLI works as a direct command when installed
   - [ ] Configure proper entry_points in setup.py
-  - [ ] CLI should work with just `pyhearingai` command without `python -m`
+  - [ ] CLI should work with just `transcribe` command without `python -m`
   - [ ] Add bash/zsh completion for the CLI
   - [ ] Verify CLI works across different installation methods (pip, poetry, homebrew)
 
@@ -39,7 +39,7 @@
 - [ ] Implement proper semantic versioning
   - [ ] Create version bumping script/process
   - [ ] Document version policy (major.minor.patch)
-  - [ ] Update version in all relevant files automatically 
+  - [ ] Update version in all relevant files automatically
   - [ ] Verify version consistency across package
 
 ### Changelog Management
@@ -80,4 +80,4 @@
   - [ ] Update project website/repository with release highlights
   - [ ] Monitor initial user feedback and issues
   - [ ] Schedule retrospective to improve release process
-  - [ ] Tag stable releases in Git repository 
+  - [ ] Tag stable releases in Git repository
