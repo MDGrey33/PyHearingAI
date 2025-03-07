@@ -22,7 +22,7 @@ repos:
     rev: 6.0.0
     hooks:
     -   id: flake8
-        # stages: [manual]  # Only run when explicitly called, not on commit
+        stages: [manual]  # Only run when explicitly called, not on commit
 
 -   repo: local
     hooks:
@@ -35,7 +35,7 @@ repos:
         always_run: true
         verbose: true
         fail_fast: false
-        # stages: [manual]  # Only run when explicitly called, not on commit
+        stages: [manual]  # Only run when explicitly called, not on commit
 
     -   id: pytest-e2e
         name: pytest-e2e
