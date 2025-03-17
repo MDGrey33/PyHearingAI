@@ -432,6 +432,76 @@ During the design evolution, we identified areas for improvement:
 3. **Error Handling**: Need for comprehensive error classification
 4. **Testing Strategies**: Complexity of testing asynchronous workflows
 
+## Testing Architecture
+
+The testing architecture follows the same clean design principles as the main codebase, with clear separation of concerns and layered testing strategies.
+
+### Testing Structure
+
+```
+tests/
+├── unit/               # Tests for individual components
+│   ├── test_hardware_detection/
+│   ├── test_responses_adapter/
+│   └── test_progress_tracking/
+├── integration/        # Tests for component interactions
+├── fixtures/           # Test data and factory methods
+└── conftest.py         # Shared pytest fixtures
+```
+
+### Testing Principles
+
+1. **Clean Architecture Alignment**
+   - Tests are organized to match the project's layered architecture
+   - Each layer is tested independently with appropriate levels of mocking
+   - Domain layer tests are isolated from infrastructure concerns
+
+2. **Test Isolation**
+   - Unit tests properly mock dependencies
+   - Each test has clear boundaries and focuses on specific functionality
+   - Tests don't rely on other tests' state
+
+3. **Test-Driven Development**
+   - Tests are written before or alongside implementation
+   - Production code changes are separate from test changes
+   - Tests verify behavior rather than implementation details
+
+4. **Comprehensive Coverage**
+   - Tests cover critical components across all layers:
+     - Domain entities and value objects
+     - Application services
+     - Infrastructure adapters
+     - Presentation components
+
+### Mocking Strategy
+
+The project employs a systematic mocking approach:
+
+1. **External Services**
+   - OpenAI API calls are mocked for reproducible tests
+   - Hardware detection functions are patched for testing different configurations
+   - File system operations are mocked to avoid test side effects
+
+2. **Cross-Layer Dependencies**
+   - Repository interfaces are mocked in service tests
+   - Services are mocked in orchestrator tests
+   - External utilities are mocked for isolation
+
+3. **Time and Progress Testing**
+   - Time-related functions are patched for deterministic progress testing
+   - System utilities are mocked for hardware detection tests
+
+### Test Data Management
+
+1. **Fixtures**
+   - Reusable test objects are defined in conftest.py
+   - Test audio files are provided in the fixtures directory
+   - Factory functions generate test entities
+
+2. **Synthetic Data Generation**
+   - Audio generators create test files with known characteristics
+   - Entity factories produce domain objects with consistent properties
+
 ## Project Status and References
 
 For implementation status and progress tracking, refer to [TODO.md](TODO.md).
