@@ -50,6 +50,7 @@ def test_cli_basic_integration(test_audio_file, tmp_path):
         "-o",
         str(output_file),
         "--verbose",
+        "--force",
     ]
 
     try:
@@ -100,6 +101,7 @@ def test_cli_source_option_integration(test_audio_file, tmp_path):
         str(output_file),
         "-f",
         "json",
+        "--force",
     ]
 
     try:

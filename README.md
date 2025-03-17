@@ -1,9 +1,98 @@
 # PyHearingAI
 
-[![GitHub](https://img.shields.io/badge/GitHub-PyHearingAI-blue?logo=github)](https://github.com/MDGrey33/PyHearingAI)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+## Project Overview
 
-The official library for transcribing audio conversations with accurate speaker identification.
+PyHearingAI is a system for processing audio files with speaker diarization and transcription capabilities, designed specifically for handling long multilingual recordings with resilience to interruptions. The system employs an idempotent processing approach, enabling pause and resume functionality with no data loss.
+
+## Documentation Guide
+
+This guide provides navigation to all project documentation.
+
+### Key Documents
+
+| Document | Purpose | When to Use |
+|----------|---------|-------------|
+| [README.md](README.md) (this file) | Central documentation index | Start here for all documentation needs |
+| [DESIGN.md](docs/project/DESIGN.md) | Architectural design and implementation details | When you need to understand how the system works |
+| [TEST_PLAN.md](docs/project/TEST_PLAN.md) | Testing strategy and coverage improvement plan | When working on testing or quality assurance |
+| [TODO.md](docs/project/TODO.md) | Implementation plan and progress tracking | When checking project status or planning work |
+| [COMPLIANCE_ROADMAP.md](docs/project/COMPLIANCE_ROADMAP.md) | Compliance information and roadmap | When addressing compliance requirements |
+
+## Finding Specific Information
+
+### Architecture & Design Information
+
+| Topic | Location | Description |
+|-------|----------|-------------|
+| Architecture Overview | [DESIGN.md#architecture-overview](DESIGN.md#architecture-overview) | Layers and components of the system |
+| Processing Workflow | [DESIGN.md#processing-workflow-design](DESIGN.md#processing-workflow-design) | The four-stage processing pipeline |
+| Domain Entities | [DESIGN.md#domain-entities](DESIGN.md#domain-entities) | Core business entities and their structure |
+| Design Patterns | [DESIGN.md#design-patterns-used](DESIGN.md#design-patterns-used) | Patterns used throughout the system |
+| Idempotent Processing | [DESIGN.md#idempotent-processing-design](DESIGN.md#idempotent-processing-design) | Details on resumable processing implementation |
+| Configuration System | [DESIGN.md#configuration-system](DESIGN.md#configuration-system) | How configuration is managed |
+| Persistence Strategy | [DESIGN.md#persistence-strategy](DESIGN.md#persistence-strategy) | How data is stored and managed |
+| CLI Enhancements | [DESIGN.md#cli-enhancements](DESIGN.md#cli-enhancements) | Command-line interface details |
+| Future Extensions | [DESIGN.md#future-extensibility](DESIGN.md#future-extensibility) | Planned future enhancements |
+| Design Lessons Learned | [DESIGN.md#lessons-learned](DESIGN.md#lessons-learned) | Key insights from development |
+
+### Testing Information
+
+| Topic | Location | Description |
+|-------|----------|-------------|
+| Current Test Coverage | [docs/project/TEST_PLAN.md#current-test-coverage-status](docs/project/TEST_PLAN.md#current-test-coverage-status) | Current test metrics and targets |
+| Testing Strategy | [docs/project/TEST_PLAN.md#complete-testing-strategy](docs/project/TEST_PLAN.md#complete-testing-strategy) | Overall testing approach |
+| Test Coverage Strategy | [docs/project/TEST_PLAN.md#test-coverage-strategy](docs/project/TEST_PLAN.md#test-coverage-strategy) | How to improve test coverage |
+| Priority Components | [docs/project/TEST_PLAN.md#priority-components-for-testing](docs/project/TEST_PLAN.md#priority-components-for-testing) | Which components need testing most |
+| Worker Component Tests | [docs/project/TEST_PLAN.md#1-worker-components-high-priority](docs/project/TEST_PLAN.md#1-worker-components-high-priority) | Testing the worker components |
+| Audio Processing Tests | [docs/project/TEST_PLAN.md#2-audio-processing-components-high-priority](docs/project/TEST_PLAN.md#2-audio-processing-components-high-priority) | Testing audio processing functionality |
+| Core Services Tests | [docs/project/TEST_PLAN.md#3-core-services-high-priority](docs/project/TEST_PLAN.md#3-core-services-high-priority) | Testing the core services |
+| Mocking Strategy | [docs/project/TEST_PLAN.md#mocking-strategy](docs/project/TEST_PLAN.md#mocking-strategy) | How to mock external dependencies |
+| Test Data Management | [docs/project/TEST_PLAN.md#test-data-management](docs/project/TEST_PLAN.md#test-data-management) | Managing test data and fixtures |
+| Implementation Timeline | [docs/project/TEST_PLAN.md#test-implementation-timeline](docs/project/TEST_PLAN.md#test-implementation-timeline) | Timeline for improving test coverage |
+| Test Quality Practices | [docs/project/TEST_PLAN.md#test-quality-best-practices](docs/project/TEST_PLAN.md#test-quality-best-practices) | Best practices for writing tests |
+| Success Criteria | [docs/project/TEST_PLAN.md#success-criteria](docs/project/TEST_PLAN.md#success-criteria) | Criteria for successful testing |
+
+### Project Status & Implementation
+
+| Topic | Location | Description |
+|-------|----------|-------------|
+| Sprint 1 Status | [TODO.md#sprint-1-core-domain-and-audio-processing-1-2-weeks---completed](TODO.md#sprint-1-core-domain-and-audio-processing-1-2-weeks---completed) | Status of core domain implementation |
+| Sprint 2 Status | [TODO.md#sprint-2-diarization-and-transcription-1-2-weeks---completed](TODO.md#sprint-2-diarization-and-transcription-1-2-weeks---completed) | Status of diarization & transcription |
+| Sprint 3 Status | [TODO.md#sprint-3-transcription-and-reconciliation-1-2-weeks---completed](TODO.md#sprint-3-transcription-and-reconciliation-1-2-weeks---completed) | Status of reconciliation service |
+| Sprint 4 Status | [TODO.md#sprint-4-cli-and-orchestration-1-2-weeks---completed](TODO.md#sprint-4-cli-and-orchestration-1-2-weeks---completed) | Status of CLI & orchestration |
+| Sprint 5 Status | [TODO.md#sprint-5-finalization-1-2-weeks---in-progress](TODO.md#sprint-5-finalization-1-2-weeks---in-progress) | Current sprint status |
+| Test Improvements | [TODO.md#testing-and-quality-improvements---high-priority](TODO.md#testing-and-quality-improvements---high-priority) | Test improvement tasks |
+| Performance Tasks | [TODO.md#performance-optimization---high-priority](TODO.md#performance-optimization---high-priority) | Performance improvement tasks |
+| Config System Tasks | [TODO.md#configuration-system-enhancement---medium-priority](TODO.md#configuration-system-enhancement---medium-priority) | Configuration system tasks |
+| UX Improvement Tasks | [TODO.md#user-experience-improvements---medium-priority](TODO.md#user-experience-improvements---medium-priority) | User experience tasks |
+| Documentation Tasks | [TODO.md#documentation---normal-priority](TODO.md#documentation---normal-priority) | Documentation tasks |
+| Lessons Learned | [TODO.md#lessons-learned-and-design-updates](TODO.md#lessons-learned-and-design-updates) | Implementation lessons learned |
+| Next Steps | [TODO.md#implementation-priority-and-next-steps](TODO.md#implementation-priority-and-next-steps) | Prioritized next implementation steps |
+| Timeline | [TODO.md#estimated-timeline](TODO.md#estimated-timeline) | Timeline for remaining work |
+
+## Key Implementation Status
+
+- ✅ **COMPLETED**: Core domain entities, repositories, audio processing, diarization
+- ✅ **COMPLETED**: Transcription service, reconciliation service, CLI enhancements
+- ✅ **COMPLETED**: Orchestration layer, progress tracking, initial end-to-end testing
+- 🔄 **IN PROGRESS**: Testing improvements, performance optimization
+- ⏰ **PENDING**: Configuration system enhancement, UX improvements, documentation
+
+## Getting Started
+
+1. **For Developers**: Start with [DESIGN.md](DESIGN.md) for architecture and implementation details
+2. **For Testers**: Begin with [TEST_PLAN.md](TEST_PLAN.md) for the testing strategy
+3. **For Project Managers**: Check [TODO.md](TODO.md) for implementation status and next steps
+
+## Current Focus Areas
+
+Based on our [TODO.md](TODO.md), the current focus areas are:
+
+1. 🔴 **HIGH PRIORITY**: Increasing test coverage to meet the 89.5% threshold
+2. 🔴 **HIGH PRIORITY**: Optimizing performance for large audio files
+3. 🟠 **MEDIUM PRIORITY**: Enhancing the configuration system
+4. 🟠 **MEDIUM PRIORITY**: Improving user experience
+5. 🟡 **NORMAL PRIORITY**: Completing project documentation
 
 ## Current Status
 

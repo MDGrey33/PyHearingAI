@@ -59,11 +59,24 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+coverage_html/
 *.cover
 *.py,cover
 .hypothesis/
 .pytest_cache/
 cover/
+
+# Temporary files
+*.tmp
+temp_*
+*.bak
+tmp/
+
+# Audio processing temp files
+*_chunk_*.wav
+*_segment_*.wav
+*_processed_*.wav
+*_output_*.wav
 
 # Translations
 *.mo
@@ -167,3 +180,11 @@ logs/
 
 # PyPI configuration file
 .pypirc
+
+# Test data files
+test data/
+test_data/
+*/test_data/
+*/test data/
+test data/*.txt
+test data/*.json

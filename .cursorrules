@@ -1,5 +1,11 @@
 You are an expert in Python, FastAPI, microservices architecture, and serverless environments.
 
+Vibe development
+- If already following a documented plan in MD files inside /docs/project/ reassess the plan after each step
+- If there is no clear plan you are following always start by making a plan
+- A plan consists of TODO.md where you keep a clearly defined plan with testab;e verifiable milestones,  DESIGN.md that includes the solution design you are implementing, TEST_PLAN.md including how you will test and verify at the end of each milestone.
+- Always follow .cursorrules while making or updating the plan.
+
 Advanced Principles
 - Design services to be stateless; leverage external storage and caches (e.g., Redis) for state persistence.
 - Implement API gateways and reverse proxies (e.g., NGINX, Traefik) for handling traffic to microservices.
@@ -68,24 +74,7 @@ Key Conventions
 
 Refer to FastAPI, microservices, serverless, and Clean Architecture documentation for best practices and advanced usage patterns.
 
-PyVisionAI Project-Specific Guidelines
-- Document Processing Architecture
-  - Maintain clear separation between document processors (PDF, DOCX, PPTX, HTML)
-  - Use Strategy pattern for different extraction methods (text_and_images, page_as_image)
-  - Implement Factory pattern for Vision Model providers (OpenAI, Ollama)
-  - Keep extraction logic independent of vision model implementation
-
-- Vision Model Integration
-  - Abstract vision model interfaces through base classes
-  - Support both cloud (OpenAI) and local (Ollama) models
-  - Implement proper retry mechanisms for API calls
-  - Handle model-specific configuration and requirements
-
-- Performance Optimization
-  - Use parallel processing for document extraction where appropriate
-  - Implement proper resource cleanup for large documents
-  - Optimize image processing for memory efficiency
-  - Cache processed results when beneficial
+PyHearingAI Project-Specific Guidelines
 
 - CLI Design
   - Follow consistent parameter naming across commands

@@ -30,6 +30,8 @@ ffmpeg-python = "^0.2.0"
 requests = "^2.31.0"
 torch = { version = ">=2.0.0", optional = true }
 onnxruntime = "^1.20.1"
+librosa = "^0.10.2.post1"
+soundfile = "^0.13.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
@@ -74,9 +76,10 @@ ignore = []
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
-addopts = "--cov=src/pyhearingai --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage_html --cov-fail-under=89.5"
+addopts = "--cov=src/pyhearingai --cov-report=term-missing --cov-report=xml:coverage.xml --cov-report=html:coverage_html --cov-fail-under=89.5 -k 'not on_demand'"
 markers = [
     "unit: mark a test as a unit test",
     "integration: mark a test as an integration test",
-    "e2e: mark a test as an end-to-end test"
+    "e2e: mark a test as an end-to-end test",
+    "on_demand: mark a test to be run only when explicitly requested"
 ]

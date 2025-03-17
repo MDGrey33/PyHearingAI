@@ -1,3 +1,9 @@
+"""
+PyHearingAI test configuration.
+
+This module contains pytest configuration for PyHearingAI tests.
+"""
+
 import os
 import shutil
 import tempfile
@@ -255,3 +261,18 @@ def assert_segments():
 def assert_segment_lists():
     """Return the assert_segment_lists_equal function."""
     return assert_segment_lists_equal
+
+
+def pytest_configure(config):
+    """Configure pytest."""
+    # Register custom markers
+    config.addinivalue_line("markers", "slow: marks tests as slow")
+    config.addinivalue_line("markers", "requires_openai_api: mark test as requiring OpenAI API access")
+    config.addinivalue_line("markers", "requires_huggingface_api: mark test as requiring HuggingFace API access")
+    config.addinivalue_line("markers", "integration: mark test as integration test")
+    config.addinivalue_line("markers", "unit: mark test as unit test")
+    config.addinivalue_line("markers", "end_to_end: mark test as end-to-end test that verifies the complete pipeline")
+    config.addinivalue_line("markers", "on_demand: mark test to be run only when explicitly requested")
+
+
+# Add any fixtures that should be available to all tests here

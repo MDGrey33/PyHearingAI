@@ -40,3 +40,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Initial release, no fixes to document
+
+## [Unreleased]
+
+### Added
+- Test fixtures directory with synthetic test audio for integration tests
+- Comprehensive unit test coverage for DiarizationService
+- Integration tests for DiarizationService with real audio files
+
+### Changed
+- Improved DiarizationService to use lazy loading for diarizer initialization
+- Enhanced error handling in audio chunk processing
+- Improved logging with consistent level usage and more informative messages
+- Simplified parallel processing using ThreadPoolExecutor
+- Fixed handling of string chunk IDs in both sequential and parallel processing
+
+### Fixed
+- Fixed error in DiarizationService when processing string chunk IDs
+- Improved reliability of parallel processing for audio chunks
+- Fixed repository access with proper Path object handling

@@ -14,6 +14,8 @@ Welcome to the PyHearingAI documentation. This library provides a simple yet pow
 - [Installation Guide](#installation) - How to install PyHearingAI
 - [Basic Usage](#basic-usage) - Basic usage examples
 - [Advanced Configuration](#advanced-usage) - Advanced configuration options
+- [CLI Usage](cli_usage.md) - How to use the command-line interface
+- [Memory Management](memory_management.md) - How to manage memory usage for large files
 
 ### API Reference
 - [Core API](#core-api) - Core API documentation
@@ -49,6 +51,12 @@ from pyhearingai import transcribe
 result = transcribe("meeting.mp3")
 print(result.text)  # Print the transcript with speaker labels
 result.save("transcript.txt")  # Save as text file
+```
+
+Or use the command line interface:
+
+```bash
+python -m pyhearingai meeting.mp3
 ```
 
 ## Installation
@@ -92,6 +100,23 @@ result.save("transcript.json")  # JSON format
 result.save("transcript.srt")   # SubRip subtitle format
 ```
 
+### Command Line Interface
+
+You can also use the command line interface:
+
+```bash
+# Basic usage
+python -m pyhearingai meeting.mp3
+
+# Specify output format
+python -m pyhearingai meeting.mp3 -f json -o transcript.json
+
+# Use verbose output and show chunk progress
+python -m pyhearingai meeting.mp3 --verbose --show-chunks
+```
+
+See the [CLI documentation](cli_usage.md) for more details.
+
 ## Advanced Usage
 
 ### Configure Models
@@ -120,6 +145,28 @@ with pipeline_session(config) as session:
     result1 = session.transcribe("file1.mp3")
     result2 = session.transcribe("file2.mp3")
 ```
+
+### Memory Management for Large Files
+
+For large audio files, you can use memory management features:
+
+```python
+from pyhearingai import transcribe_chunked, set_memory_limit, cleanup_resources
+
+# Set a memory limit
+set_memory_limit(2048)  # 2GB limit
+
+# Process a large file in chunks
+result = transcribe_chunked(
+    "very_long_recording.mp3",
+    chunk_size_seconds=60  # 1-minute chunks
+)
+
+# Clean up resources after processing
+cleanup_resources()
+```
+
+See the [Memory Management documentation](memory_management.md) for more details.
 
 ### Track Progress
 

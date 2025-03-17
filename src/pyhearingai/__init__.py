@@ -6,8 +6,14 @@ This package provides tools for transcribing audio files with speaker diarizatio
 
 __version__ = "0.1.0"
 
+# Import initialization module to ensure all components are registered
+from pyhearingai import initialization
+
 # Import the core functionality
-from pyhearingai.application.transcribe import transcribe
+from pyhearingai.application.transcribe import transcribe, transcribe_chunked
+from pyhearingai.application.session import pipeline_session
+from pyhearingai.application.resource_manager import cleanup_resources
+from pyhearingai.config import set_memory_limit
 
 # Import public API
 from pyhearingai.core.models import DiarizationSegment, Segment, TranscriptionResult
@@ -27,6 +33,10 @@ from pyhearingai.infrastructure.registry import (
 
 __all__ = [
     "transcribe",
+    "transcribe_chunked",
+    "pipeline_session",
+    "cleanup_resources",
+    "set_memory_limit",
     "TranscriptionResult",
     "Segment",
     "DiarizationSegment",

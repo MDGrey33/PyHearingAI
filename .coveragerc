@@ -1,0 +1,23 @@
+[run]
+source = src/pyhearingai
+omit = 
+    tests/*
+    */__pycache__/*
+    */site-packages/*
+    */.venv/*
+    */.env/*
+    */examples/*
+    */docs/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    pass
+    raise ImportError
+    except ImportError
+
+[html]
+directory = coverage_html 

@@ -124,3 +124,11 @@ class WhisperOpenAITranscriber(Transcriber):
         except Exception as e:
             logger.error(f"Error transcribing with OpenAI Whisper API: {str(e)}")
             raise
+
+    def close(self):
+        """Release any resources used by the transcriber."""
+        # No specific resources to release for the OpenAI Whisper API
+        # This is a stateless API client, but we implement the method
+        # to satisfy the Transcriber interface
+        logger.debug("WhisperOpenAITranscriber resources released")
+        pass

@@ -1,0 +1,19 @@
+# Backup file
+# Build the prompt
+prompt_parts = [
+    f"# Audio Transcription Reconciliation Task\n\n",
+    f"## Overview\n\n",
+]
+
+# Add source file info if available
+if hasattr(job, 'original_audio_path'):
+    if isinstance(job.original_audio_path, str):
+        import os
+        prompt_parts.append(f"Source file: {os.path.basename(job.original_audio_path)}\n")
+    else:
+        prompt_parts.append(f"Source file: {job.original_audio_path.name}\n")
+
+# Add duration and chunk info
+prompt_parts.append(f"Total duration: {self._format_duration(job.duration if hasattr(job, 'duration') else 0)}\n")
+prompt_parts.append(f"Number of chunks: {len(diarization_segments)}\n\n")
+prompt_parts.append(f"## Audio Chunks\n\n") 
