@@ -5,10 +5,11 @@ This module provides functions to create synthetic audio files for testing
 diarization, transcription, and reconciliation functionality.
 """
 
+import os
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 import soundfile as sf
-import os
-from typing import List, Dict, Any, Tuple, Optional
 
 
 def create_test_audio_file(

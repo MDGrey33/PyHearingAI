@@ -8,11 +8,11 @@ __version__ = "0.1.0"
 
 # Import initialization module to ensure all components are registered
 from pyhearingai import initialization
+from pyhearingai.application.resource_manager import cleanup_resources
+from pyhearingai.application.session import pipeline_session
 
 # Import the core functionality
 from pyhearingai.application.transcribe import transcribe, transcribe_chunked
-from pyhearingai.application.session import pipeline_session
-from pyhearingai.application.resource_manager import cleanup_resources
 from pyhearingai.config import set_memory_limit
 
 # Import public API

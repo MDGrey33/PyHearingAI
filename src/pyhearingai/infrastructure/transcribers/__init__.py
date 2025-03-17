@@ -9,9 +9,3 @@ with the registry when the package is imported.
 from pyhearingai.infrastructure.transcribers.whisper_openai import WhisperOpenAITranscriber
 
 __all__ = ["WhisperOpenAITranscriber"]
-
-
-
-
-
-

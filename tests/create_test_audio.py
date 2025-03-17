@@ -8,10 +8,11 @@ This allows us to test the diarization functionality without requiring
 large real-world audio files.
 """
 
-import numpy as np
-from scipy.io import wavfile
 import os
 from pathlib import Path
+
+import numpy as np
+from scipy.io import wavfile
 
 # Configuration
 SAMPLE_RATE = 16000  # 16kHz

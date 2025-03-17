@@ -1,7 +1,7 @@
 """
 PyHearingAI Diarization Service Module.
 
-This package contains components for speaker diarization with support for 
+This package contains components for speaker diarization with support for
 idempotent processing of audio chunks.
 """
 

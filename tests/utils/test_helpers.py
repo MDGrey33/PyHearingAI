@@ -7,29 +7,30 @@ This module provides fixtures, mocks, and utilities for unit and integration tes
 import os
 import tempfile
 import uuid
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional, Union
+from unittest.mock import MagicMock
+
 import numpy as np
 import soundfile as sf  # Use soundfile instead of librosa.output
-from unittest.mock import MagicMock
-from typing import Dict, List, Optional, Union
-from pathlib import Path
-from datetime import datetime
 
 from pyhearingai.core.idempotent import (
-    ProcessingJob,
     AudioChunk,
     ChunkStatus,
+    ProcessingJob,
     ProcessingStatus,
     SpeakerSegment,
 )
-from pyhearingai.core.models import Segment, DiarizationSegment
-from pyhearingai.diarization.service import DiarizationService
+from pyhearingai.core.models import DiarizationSegment, Segment
 from pyhearingai.diarization.repositories.diarization_repository import DiarizationRepository
-from pyhearingai.transcription.service import TranscriptionService
-from pyhearingai.transcription.repositories.transcription_repository import TranscriptionRepository
-from pyhearingai.reconciliation.service import ReconciliationService
+from pyhearingai.diarization.service import DiarizationService
 from pyhearingai.reconciliation.repositories.reconciliation_repository import (
     ReconciliationRepository,
 )
+from pyhearingai.reconciliation.service import ReconciliationService
+from pyhearingai.transcription.repositories.transcription_repository import TranscriptionRepository
+from pyhearingai.transcription.service import TranscriptionService
 
 
 class TestFixtures:

@@ -9,9 +9,9 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Any
+from typing import Any, Dict, List, Optional, Union
 
-from pyhearingai.config import JOBS_DIR, CHUNKS_DIR
+from pyhearingai.config import CHUNKS_DIR, JOBS_DIR
 from pyhearingai.core.idempotent import (
     AudioChunk,
     ChunkStatus,
@@ -19,11 +19,7 @@ from pyhearingai.core.idempotent import (
     ProcessingStatus,
     SpeakerSegment,
 )
-from pyhearingai.core.idempotent_ports import (
-    ChunkRepository,
-    JobRepository,
-    SegmentRepository,
-)
+from pyhearingai.core.idempotent_ports import ChunkRepository, JobRepository, SegmentRepository
 
 
 class JsonFileHandler:

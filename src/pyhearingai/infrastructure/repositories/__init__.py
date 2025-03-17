@@ -7,7 +7,7 @@ defined in the core layer.
 
 # Import repositories for easy access
 from pyhearingai.infrastructure.repositories.json_repositories import (
-    JsonJobRepository,
     JsonChunkRepository,
+    JsonJobRepository,
     JsonSegmentRepository,
 )

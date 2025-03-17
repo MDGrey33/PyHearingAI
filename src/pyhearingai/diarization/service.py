@@ -5,19 +5,29 @@ This module provides a service that performs speaker diarization on audio chunks
 with support for idempotent processing and resumability.
 """
 
-import logging
-from pathlib import Path
-from typing import Dict, List, Optional, Union, Callable
-import time
 import concurrent.futures
-from datetime import datetime
+import logging
 import os
 import subprocess
 import sys
+import time
+from datetime import datetime
+from pathlib import Path
+from typing import Callable, Dict, List, Optional, Union
+
 try:
     # Rich provides better terminal support for progress bars
-    from rich.progress import Progress, TextColumn, BarColumn, TimeElapsedColumn, TimeRemainingColumn, SpinnerColumn, ProgressColumn
     from rich.console import Console
+    from rich.progress import (
+        BarColumn,
+        Progress,
+        ProgressColumn,
+        SpinnerColumn,
+        TextColumn,
+        TimeElapsedColumn,
+        TimeRemainingColumn,
+    )
+
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
@@ -27,18 +37,19 @@ from pyhearingai.core.idempotent import AudioChunk, ChunkStatus, ProcessingJob
 from pyhearingai.core.models import DiarizationSegment
 from pyhearingai.core.ports import Diarizer
 from pyhearingai.diarization.repositories.diarization_repository import DiarizationRepository
-from pyhearingai.infrastructure.registry import get_diarizer
 from pyhearingai.infrastructure.diarizers.pyannote import DiarizationTimeoutError
+from pyhearingai.infrastructure.registry import get_diarizer
 
 logger = logging.getLogger(__name__)
 
+
 class DiarizationMonitor:
     """Monitor diarization progress and handle timeouts."""
-    
+
     def __init__(self, timeout: int = 7200):
         """
         Initialize the monitor.
-        
+
         Args:
             timeout: Default timeout in seconds (default: 2 hours)
         """
@@ -46,39 +57,36 @@ class DiarizationMonitor:
         self.start_time = None
         self.current_chunk = None
         self._reset()
-    
+
     def _reset(self):
         """Reset the monitor state."""
         self.start_time = None
         self.current_chunk = None
-        
+
     def start_chunk(self, chunk_id: str):
         """Start monitoring a new chunk."""
         self.start_time = datetime.now()
         self.current_chunk = chunk_id
         logger.info(f"Started processing chunk {chunk_id} at {self.start_time}")
-        
+
     def check_timeout(self) -> bool:
         """Check if current processing has exceeded timeout."""
         if not self.start_time or not self.current_chunk:
             return False
-            
+
         elapsed = (datetime.now() - self.start_time).total_seconds()
         if elapsed > self.timeout:
-            logger.warning(
-                f"Chunk {self.current_chunk} processing timed out after {elapsed:.2f}s"
-            )
+            logger.warning(f"Chunk {self.current_chunk} processing timed out after {elapsed:.2f}s")
             return True
         return False
-        
+
     def end_chunk(self):
         """End monitoring for the current chunk."""
         if self.start_time and self.current_chunk:
             elapsed = (datetime.now() - self.start_time).total_seconds()
-            logger.info(
-                f"Completed chunk {self.current_chunk} in {elapsed:.2f}s"
-            )
+            logger.info(f"Completed chunk {self.current_chunk} in {elapsed:.2f}s")
         self._reset()
+
 
 def _process_chunk_directly(chunk, diarizer_name, timeout=7200, **kwargs):
     """
@@ -103,11 +111,11 @@ def _process_chunk_directly(chunk, diarizer_name, timeout=7200, **kwargs):
         )
 
         service = DiarizationService(diarizer_name=diarizer_name)
-        
+
         # Add timeout to kwargs
         kwargs["timeout"] = timeout
         kwargs["disable_progress"] = True
-        
+
         # Process the chunk
         segments = service.diarize_chunk(chunk, None, **kwargs)
 
@@ -166,22 +174,22 @@ class DiarizationService:
             import multiprocessing
             import platform
             import subprocess
-            
+
             cpu_count = multiprocessing.cpu_count()
-            
+
             # Detect Apple Silicon (M-series) processors for optimal configuration
             is_apple_silicon = platform.system() == "Darwin" and "arm" in platform.machine()
-            
+
             # Better detection for M3 Max using system_profiler
             is_high_end = False
             if is_apple_silicon:
                 try:
                     # Try to detect M3 Max using system_profiler
                     result = subprocess.run(
-                        ["system_profiler", "SPHardwareDataType"], 
-                        capture_output=True, 
-                        text=True, 
-                        check=False
+                        ["system_profiler", "SPHardwareDataType"],
+                        capture_output=True,
+                        text=True,
+                        check=False,
                     )
                     chip_info = result.stdout.lower()
                     is_high_end = "m3 max" in chip_info or "m3max" in chip_info or cpu_count >= 12
@@ -189,21 +197,25 @@ class DiarizationService:
                         logger.info("Detected M3 Max processor")
                 except Exception as e:
                     logger.debug(f"Error detecting processor type: {e}")
-            
+
             if is_high_end:
                 # For M3 Max, use more workers to utilize all cores efficiently
                 # Keep 2 cores free for system and UI responsiveness
                 max_workers = max(1, cpu_count - 2)
-                logger.info(f"Detected high-end Apple Silicon with {cpu_count} cores, using {max_workers} workers")
+                logger.info(
+                    f"Detected high-end Apple Silicon with {cpu_count} cores, using {max_workers} workers"
+                )
             elif is_apple_silicon:
                 # For other M-series chips, use cpu_count - 1
                 max_workers = max(1, cpu_count - 1)
-                logger.info(f"Detected Apple Silicon with {cpu_count} cores, using {max_workers} workers")
+                logger.info(
+                    f"Detected Apple Silicon with {cpu_count} cores, using {max_workers} workers"
+                )
             else:
                 # For other systems, use default strategy
                 max_workers = max(1, cpu_count - 1)
                 logger.info(f"Using {max_workers} workers (system has {cpu_count} cores)")
-                
+
         self.max_workers = max_workers
 
         logger.debug(
@@ -255,7 +267,7 @@ class DiarizationService:
 
         # Start monitoring this chunk
         self.monitor.start_chunk(chunk.id)
-        
+
         # Set timeout
         timeout = kwargs.get("timeout", self.default_timeout)
         kwargs["timeout"] = timeout
@@ -277,7 +289,7 @@ class DiarizationService:
                 logger.debug(f"No segments found for chunk {chunk.id}")
 
             return segments
-            
+
         except DiarizationTimeoutError as e:
             logger.error(f"Timeout processing chunk {chunk.id}: {str(e)}")
             return []
@@ -420,10 +432,10 @@ class DiarizationService:
         """
         start_time = time.time()
         results = {}
-        
+
         # Extract progress callback from kwargs
         progress_callback = kwargs.pop("progress_callback", None)
-        
+
         # Set timeout for each chunk
         timeout = kwargs.get("timeout", self.default_timeout)
         kwargs["timeout"] = timeout
@@ -448,20 +460,20 @@ class DiarizationService:
         print("\n" + "=" * 50)
         print(f"DIARIZATION PROGRESS: Starting processing of {num_chunks} chunks")
         print("=" * 50)
-        
+
         # Calculate chunk batches for optimal processing
         # Process chunks in batches to avoid system overload while maintaining parallelism
+        import multiprocessing
         import os
         import platform
-        import multiprocessing
-        
+
         # Determine if we're on Apple Silicon for optimization
         is_apple_silicon = platform.system() == "Darwin" and "arm" in platform.machine()
         cpu_count = multiprocessing.cpu_count()
-        
+
         # Consider it high-end if it has many cores (M3 Max has 16 cores)
         is_high_end = is_apple_silicon and cpu_count >= 12
-        
+
         # Set optimal batch size based on hardware
         if is_high_end:
             # M3 Max can handle more concurrent work
@@ -472,27 +484,27 @@ class DiarizationService:
         else:
             # Default - be more conservative
             batch_size = min(num_chunks, max_workers)
-            
+
         logger.info(f"Using batch size of {batch_size} for parallel processing")
 
         # Track overall progress
         total_completed = 0
         total_batches = (num_chunks + batch_size - 1) // batch_size
-        
+
         # Create progress display
         # Use Rich if available (better terminal display), otherwise use tqdm
         master_progress = None
         batch_progress = None
         console = None
-        
+
         if self.show_progress:
             if RICH_AVAILABLE:
                 # Create a Rich console for progress display
                 console = Console()
-                
+
                 # Print a separator line
                 console.print("\n[bold blue]Starting Diarization[/bold blue]")
-                
+
                 # Create a Rich progress display
                 master_progress = Progress(
                     SpinnerColumn(),
@@ -502,71 +514,71 @@ class DiarizationService:
                     TimeElapsedColumn(),
                     TimeRemainingColumn(),
                     console=console,
-                    expand=True
+                    expand=True,
                 )
-                
+
                 # Create the main task
                 master_task_id = master_progress.add_task(
-                    f"[cyan]Processing {num_chunks} chunks", 
-                    total=num_chunks
+                    f"[cyan]Processing {num_chunks} chunks", total=num_chunks
                 )
-                
+
                 # Start the progress display
                 master_progress.start()
             else:
                 # Fall back to tqdm if Rich is not available
                 # Create a progress bar that writes directly to stdout to avoid logging conflicts
                 master_pbar = tqdm.tqdm(
-                    total=num_chunks, 
-                    desc="Overall diarization progress", 
+                    total=num_chunks,
+                    desc="Overall diarization progress",
                     unit="chunk",
                     position=0,
-                    file=sys.__stdout__  # Use sys.__stdout__ to bypass any redirection
+                    file=sys.__stdout__,  # Use sys.__stdout__ to bypass any redirection
                 )
                 # Force a newline before the progress bar
                 print("", file=sys.__stdout__)
-        
+
         # Process chunks in parallel with timeout monitoring
         for batch_idx in range(0, num_chunks, batch_size):
-            batch_chunks = processed_chunks[batch_idx:batch_idx+batch_size]
+            batch_chunks = processed_chunks[batch_idx : batch_idx + batch_size]
             batch_size_actual = len(batch_chunks)
-            
+
             batch_num = batch_idx // batch_size + 1
-            logger.info(f"Processing batch {batch_num}/{total_batches} with {batch_size_actual} chunks")
-            
+            logger.info(
+                f"Processing batch {batch_num}/{total_batches} with {batch_size_actual} chunks"
+            )
+
             # Print progress at batch start - guaranteed to be visible
             print(f"\nBATCH {batch_num}/{total_batches}: Starting with {batch_size_actual} chunks")
-            print(f"Overall progress: {total_completed}/{num_chunks} chunks ({total_completed/num_chunks*100:.1f}%)")
-            
+            print(
+                f"Overall progress: {total_completed}/{num_chunks} chunks ({total_completed/num_chunks*100:.1f}%)"
+            )
+
             # Report batch progress to callback if provided
             if progress_callback:
                 progress_callback(
-                    total_completed, 
-                    num_chunks, 
-                    f"Starting batch {batch_num}/{total_batches}"
+                    total_completed, num_chunks, f"Starting batch {batch_num}/{total_batches}"
                 )
-            
+
             # Create batch progress display
             if self.show_progress:
                 if RICH_AVAILABLE and master_progress:
                     # Add a batch task to the master progress
                     batch_task_id = master_progress.add_task(
-                        f"[green]Batch {batch_num}/{total_batches}", 
-                        total=batch_size_actual
+                        f"[green]Batch {batch_num}/{total_batches}", total=batch_size_actual
                     )
                 else:
                     # Fall back to tqdm
                     # Force a newline before each batch progress bar
                     print("", file=sys.__stdout__)
                     batch_pbar = tqdm.tqdm(
-                        total=batch_size_actual, 
-                        desc=f"Batch {batch_num}/{total_batches}", 
+                        total=batch_size_actual,
+                        desc=f"Batch {batch_num}/{total_batches}",
                         unit="chunk",
                         position=1,
                         leave=False,
-                        file=sys.__stdout__  # Use sys.__stdout__ to bypass any redirection
+                        file=sys.__stdout__,  # Use sys.__stdout__ to bypass any redirection
                     )
-            
+
             completed = 0
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                 # Submit batch of tasks
@@ -576,7 +588,7 @@ class DiarizationService:
                         chunk=chunk,
                         diarizer_name=self.diarizer_name,
                         timeout=timeout,
-                        **kwargs
+                        **kwargs,
                     ): chunk
                     for chunk in batch_chunks
                 }
@@ -594,44 +606,57 @@ class DiarizationService:
 
                         completed += 1
                         total_completed += 1
-                        
+
                         # Update progress display
                         if self.show_progress:
                             if RICH_AVAILABLE and master_progress:
                                 master_progress.update(master_task_id, advance=1)
                                 master_progress.update(batch_task_id, advance=1)
                             else:
-                                if 'batch_pbar' in locals():
+                                if "batch_pbar" in locals():
                                     batch_pbar.update(1)
-                                if 'master_pbar' in locals():
+                                if "master_pbar" in locals():
                                     master_pbar.update(1)
-                            
+
                         # Calculate and display completion percentage
                         completion_pct = (total_completed / num_chunks) * 100
                         # Print direct progress update every 10% or at the end of each batch
-                        if completed % max(1, batch_size_actual // 4) == 0 or completed == batch_size_actual:
-                            print(f"PROGRESS: {total_completed}/{num_chunks} chunks processed ({completion_pct:.1f}%) - Batch {batch_num}/{total_batches}")
-                        
-                        if completion_pct % 10 < 0.1 or completed == batch_size_actual:  # Log at 10% intervals or batch completion
-                            logger.info(f"Progress: {total_completed}/{num_chunks} chunks processed ({completion_pct:.1f}%)")
-                        
+                        if (
+                            completed % max(1, batch_size_actual // 4) == 0
+                            or completed == batch_size_actual
+                        ):
+                            print(
+                                f"PROGRESS: {total_completed}/{num_chunks} chunks processed ({completion_pct:.1f}%) - Batch {batch_num}/{total_batches}"
+                            )
+
+                        if (
+                            completion_pct % 10 < 0.1 or completed == batch_size_actual
+                        ):  # Log at 10% intervals or batch completion
+                            logger.info(
+                                f"Progress: {total_completed}/{num_chunks} chunks processed ({completion_pct:.1f}%)"
+                            )
+
                         # Report progress to callback if provided
                         if progress_callback:
                             progress_callback(
-                                total_completed, 
-                                num_chunks, 
-                                f"Processed chunk {chunk.id}, {total_completed}/{num_chunks} complete ({completion_pct:.1f}%)"
+                                total_completed,
+                                num_chunks,
+                                f"Processed chunk {chunk.id}, {total_completed}/{num_chunks} complete ({completion_pct:.1f}%)",
                             )
-                            
+
                     except concurrent.futures.TimeoutError:
                         logger.error(f"Chunk {chunk.id} processing timed out")
                     except Exception as e:
                         logger.error(f"Error processing chunk {chunk.id}: {str(e)}")
-            
+
             # Print batch completion message - guaranteed to be visible
-            print(f"BATCH {batch_num}/{total_batches} COMPLETED: {completed}/{batch_size_actual} chunks processed")
-            print(f"Overall progress: {total_completed}/{num_chunks} chunks ({total_completed/num_chunks*100:.1f}%)")
-            
+            print(
+                f"BATCH {batch_num}/{total_batches} COMPLETED: {completed}/{batch_size_actual} chunks processed"
+            )
+            print(
+                f"Overall progress: {total_completed}/{num_chunks} chunks ({total_completed/num_chunks*100:.1f}%)"
+            )
+
             # Close batch progress display
             if self.show_progress:
                 if RICH_AVAILABLE and master_progress:
@@ -639,9 +664,9 @@ class DiarizationService:
                     master_progress.remove_task(batch_task_id)
                 else:
                     # Close tqdm progress bar
-                    if 'batch_pbar' in locals():
+                    if "batch_pbar" in locals():
                         batch_pbar.close()
-                    
+
                     # Print a blank line between batches for better readability
                     print("", file=sys.__stdout__)
 
@@ -650,9 +675,11 @@ class DiarizationService:
             if RICH_AVAILABLE and master_progress:
                 master_progress.stop()
                 # Print a completion message
-                console.print(f"\n[bold green]Diarization completed: {total_completed}/{num_chunks} chunks processed[/bold green]\n")
+                console.print(
+                    f"\n[bold green]Diarization completed: {total_completed}/{num_chunks} chunks processed[/bold green]\n"
+                )
             else:
-                if 'master_pbar' in locals():
+                if "master_pbar" in locals():
                     master_pbar.close()
                 # Print a blank line for separation
                 print("", file=sys.__stdout__)
@@ -667,18 +694,18 @@ class DiarizationService:
         end_time = time.time()
         time_taken = end_time - start_time
         chunks_per_second = num_chunks / time_taken if time_taken > 0 else 0
-        
+
         logger.info(
             f"Completed diarization for job {job.id}, processed {total_completed}/{num_chunks} chunks"
         )
-        logger.info(f"Total processing time: {time_taken:.2f} seconds ({chunks_per_second:.2f} chunks/second)")
-        
+        logger.info(
+            f"Total processing time: {time_taken:.2f} seconds ({chunks_per_second:.2f} chunks/second)"
+        )
+
         # Final progress callback
         if progress_callback:
             progress_callback(
-                total_completed,
-                num_chunks,
-                f"Completed diarization in {time_taken:.2f} seconds"
+                total_completed, num_chunks, f"Completed diarization in {time_taken:.2f} seconds"
             )
 
         return results
@@ -727,10 +754,10 @@ class DiarizationService:
             if RICH_AVAILABLE:
                 # Create a Rich console for progress display
                 console = Console()
-                
+
                 # Print a separator line
                 console.print("\n[bold blue]Starting Sequential Diarization[/bold blue]")
-                
+
                 # Create a Rich progress display
                 progress = Progress(
                     SpinnerColumn(),
@@ -740,28 +767,27 @@ class DiarizationService:
                     TimeElapsedColumn(),
                     TimeRemainingColumn(),
                     console=console,
-                    expand=True
+                    expand=True,
                 )
-                
+
                 # Create the main task
                 task_id = progress.add_task(
-                    f"[cyan]Processing {num_chunks} chunks", 
-                    total=num_chunks
+                    f"[cyan]Processing {num_chunks} chunks", total=num_chunks
                 )
-                
+
                 # Start the progress display
                 progress.start()
             else:
                 # Fall back to tqdm if Rich is not available
                 # Force a newline before the progress bar
                 print("", file=sys.__stdout__)
-                
+
                 # Create a progress bar that writes directly to stdout
                 pbar = tqdm.tqdm(
                     total=num_chunks,
                     desc="Diarization progress",
                     unit="chunk",
-                    file=sys.__stdout__  # Use sys.__stdout__ to bypass any redirection
+                    file=sys.__stdout__,  # Use sys.__stdout__ to bypass any redirection
                 )
 
         # Process each chunk
@@ -774,25 +800,31 @@ class DiarizationService:
                 if cached_results:
                     logger.debug(f"Using cached diarization results for chunk {chunk_id}")
                     results[chunk_id] = cached_results
-                    
+
                     # Update progress
                     if self.show_progress:
-                        if RICH_AVAILABLE and 'progress' in locals():
-                            progress.update(task_id, advance=1, description=f"[cyan]Using cached result for chunk {i+1}/{num_chunks}")
-                        elif 'pbar' in locals():
+                        if RICH_AVAILABLE and "progress" in locals():
+                            progress.update(
+                                task_id,
+                                advance=1,
+                                description=f"[cyan]Using cached result for chunk {i+1}/{num_chunks}",
+                            )
+                        elif "pbar" in locals():
                             pbar.update(1)
-                            
+
                     if progress_callback:
-                        progress_callback(i+1, num_chunks, f"Used cached results for chunk {chunk_id}")
-                        
+                        progress_callback(
+                            i + 1, num_chunks, f"Used cached results for chunk {chunk_id}"
+                        )
+
                     continue
 
             # Report progress
-            completion_pct = ((i+1) / num_chunks) * 100
+            completion_pct = ((i + 1) / num_chunks) * 100
             # Print direct progress update every 10% or every chunk if few chunks
             if num_chunks <= 10 or i % max(1, num_chunks // 10) == 0 or i == num_chunks - 1:
                 print(f"PROGRESS: {i+1}/{num_chunks} chunks processed ({completion_pct:.1f}%)")
-            
+
             logger.debug(f"Processing chunk {i+1}/{num_chunks}: {chunk_id} ({completion_pct:.1f}%)")
             if progress_callback:
                 progress_callback(i, num_chunks, f"Processing chunk {chunk_id}")
@@ -800,9 +832,12 @@ class DiarizationService:
             # Process the chunk
             try:
                 # Update progress description
-                if self.show_progress and RICH_AVAILABLE and 'progress' in locals():
-                    progress.update(task_id, description=f"[cyan]Processing chunk {i+1}/{num_chunks}: {chunk_id}")
-                
+                if self.show_progress and RICH_AVAILABLE and "progress" in locals():
+                    progress.update(
+                        task_id,
+                        description=f"[cyan]Processing chunk {i+1}/{num_chunks}: {chunk_id}",
+                    )
+
                 segments = self.diarize_chunk(chunk, job, **kwargs)
 
                 if segments:
@@ -812,30 +847,40 @@ class DiarizationService:
                     )
                 else:
                     logger.warning(f"No segments found for chunk {chunk_id}")
-                    
+
                 # Update progress display
                 if self.show_progress:
-                    if RICH_AVAILABLE and 'progress' in locals():
+                    if RICH_AVAILABLE and "progress" in locals():
                         progress.update(task_id, advance=1)
-                    elif 'pbar' in locals():
+                    elif "pbar" in locals():
                         pbar.update(1)
-                    
+
                 # Report progress to callback
                 if progress_callback:
-                    progress_callback(i+1, num_chunks, f"Processed chunk {chunk_id}, found {len(segments) if segments else 0} segments")
-                    
+                    progress_callback(
+                        i + 1,
+                        num_chunks,
+                        f"Processed chunk {chunk_id}, found {len(segments) if segments else 0} segments",
+                    )
+
             except Exception as e:
                 logger.error(f"Error processing chunk {chunk_id}: {str(e)}")
                 # Still update progress even on error
                 if self.show_progress:
-                    if RICH_AVAILABLE and 'progress' in locals():
-                        progress.update(task_id, advance=1, description=f"[red]Error processing chunk {i+1}/{num_chunks}")
-                    elif 'pbar' in locals():
+                    if RICH_AVAILABLE and "progress" in locals():
+                        progress.update(
+                            task_id,
+                            advance=1,
+                            description=f"[red]Error processing chunk {i+1}/{num_chunks}",
+                        )
+                    elif "pbar" in locals():
                         pbar.update(1)
 
         # Print final completion message - guaranteed to be visible
         print("\n" + "=" * 50)
-        print(f"SEQUENTIAL DIARIZATION COMPLETED: {len(results)}/{len(processed_chunks)} chunks processed")
+        print(
+            f"SEQUENTIAL DIARIZATION COMPLETED: {len(results)}/{len(processed_chunks)} chunks processed"
+        )
         time_taken = time.time() - start_time
         print(f"Total time: {time_taken:.2f} seconds ({num_chunks / time_taken:.2f} chunks/second)")
         print("=" * 50 + "\n")
@@ -843,18 +888,18 @@ class DiarizationService:
         end_time = time.time()
         time_taken = end_time - start_time
         chunks_per_second = num_chunks / time_taken if time_taken > 0 else 0
-        
+
         logger.info(
             f"Completed diarization for job {job.id}, processed {len(results)}/{len(processed_chunks)} chunks"
         )
-        logger.info(f"Total processing time: {time_taken:.2f} seconds ({chunks_per_second:.2f} chunks/second)")
-        
+        logger.info(
+            f"Total processing time: {time_taken:.2f} seconds ({chunks_per_second:.2f} chunks/second)"
+        )
+
         # Final progress callback
         if progress_callback:
             progress_callback(
-                len(results),
-                num_chunks,
-                f"Completed diarization in {time_taken:.2f} seconds"
+                len(results), num_chunks, f"Completed diarization in {time_taken:.2f} seconds"
             )
 
         return results
@@ -885,7 +930,7 @@ class DiarizationService:
         # Set timeout
         timeout = kwargs.get("timeout", self.default_timeout)
         kwargs["timeout"] = timeout
-        
+
         return self.diarizer.diarize(audio_path, **kwargs)
 
     def process_job(

@@ -238,7 +238,7 @@ The configuration system is designed to be:
 @dataclass
 class IdempotentProcessingConfig:
     """Configuration settings for idempotent processing."""
-    
+
     enabled: bool = False
     data_dir: Path = Path.home() / ".pyhearingai"
     jobs_dir: Path = None
@@ -246,7 +246,7 @@ class IdempotentProcessingConfig:
     chunk_duration: float = 300.0  # Default chunk size in seconds
     chunk_overlap: float = 5.0  # Default overlap between chunks in seconds
     use_json_persistence: bool = True
-    
+
     def __post_init__(self):
         if self.jobs_dir is None:
             self.jobs_dir = self.data_dir / "jobs"
@@ -296,8 +296,8 @@ To address token limit challenges in reconciliation of long audio files, we've d
            self.client = OpenAI()
            self.model = model
            self.token_counter = TokenCounter(model)
-       
-       def reconcile(self, job, diarization_segments, transcription_segments, 
+
+       def reconcile(self, job, diarization_segments, transcription_segments,
                      segment_transcriptions, options=None):
            # Implementation using Responses API
            pass
@@ -309,12 +309,12 @@ To address token limit challenges in reconciliation of long audio files, we've d
        def __init__(self, token_counter, max_tokens=7000):
            self.token_counter = token_counter
            self.max_tokens = max_tokens
-       
-       def create_batches(self, diarization_segments, transcription_segments, 
+
+       def create_batches(self, diarization_segments, transcription_segments,
                           segment_transcriptions):
            # Split data into appropriately sized batches
            pass
-           
+
        def format_batch(self, batch, batch_index, total_batches):
            # Format batch into message content
            pass
@@ -325,11 +325,11 @@ To address token limit challenges in reconciliation of long audio files, we've d
    class TokenCounter:
        def __init__(self, model="gpt-4o"):
            self.encoding = tiktoken.encoding_for_model(model)
-       
+
        def count_tokens(self, text):
            # Count tokens in text string
            return len(self.encoding.encode(text))
-           
+
        def estimate_batch_size(self, segments, text_samples):
            # Estimate maximum segments per batch
            pass
@@ -341,7 +341,7 @@ To address token limit challenges in reconciliation of long audio files, we've d
        def process_responses(self, responses, batches):
            # Combine and deduplicate responses
            pass
-           
+
        def resolve_overlaps(self, segments):
            # Resolve overlapping segments
            pass
@@ -442,4 +442,4 @@ For detailed testing strategy and coverage improvement plan, refer to [TEST_PLAN
 
 The PyHearingAI design follows clean architecture principles while addressing the unique challenges of audio processing at scale. The system prioritizes reliability, resumability, and user experience, all while maintaining a clear separation of concerns and adhering to solid software engineering principles.
 
-The architecture enables processing of arbitrarily large audio files with constant memory usage, parallellization for performance, and robust error handling for reliability. 
+The architecture enables processing of arbitrarily large audio files with constant memory usage, parallellization for performance, and robust error handling for reliability.

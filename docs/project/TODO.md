@@ -15,7 +15,7 @@ python -m pyhearingai "test data/short_conversation.m4a" --force
 
 ### Long Audio File Test
 ```bash
-# ⚠️ WARNING: The long file is over 1 hour in duration! ⚠️ 
+# ⚠️ WARNING: The long file is over 1 hour in duration! ⚠️
 # NEVER run without time constraints - it will take too long and consume excessive resources
 
 # RECOMMENDED: Process only a small segment (5 minutes)
@@ -44,7 +44,7 @@ When processing longer audio segments (>5 minutes), the reconciliation phase hit
   4. Add fallback to use GPT-4-32k for larger contexts
 
 ### Critical Issue: Syntax Error ✓
-There was a syntax error in audio_chunking.py with an invalid character '∑' at the beginning of the docstring.  
+There was a syntax error in audio_chunking.py with an invalid character '∑' at the beginning of the docstring.
 ✅ Fixed: The invalid character has been removed from the docstring.
 
 ### Critical Issue: Process Hanging ✓
@@ -64,7 +64,7 @@ To address the token limit issues in reconciliation, we will implement OpenAI's 
 Current Status: **Implementation Completed - Testing & Optimization Phase** 🚧
 
 #### Completed:
-- ✅ Base architecture design 
+- ✅ Base architecture design
 - ✅ Base interface definition (`BaseReconciliationAdapter`)
 - ✅ Core components implementation:
   - ✅ TokenCounter class
@@ -168,11 +168,11 @@ Current Status: **Implementation Completed - Testing & Optimization Phase** 🚧
        @abstractmethod
        def reconcile(self, job, diarization_segments, transcription_segments, segment_transcriptions, options=None):
            pass
-   
+
    class GPT4ReconciliationAdapter(BaseReconciliationAdapter):
        # Existing implementation
        pass
-   
+
    class ResponsesReconciliationAdapter(BaseReconciliationAdapter):
        # New implementation using Responses API
        pass

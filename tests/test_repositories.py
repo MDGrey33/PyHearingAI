@@ -5,18 +5,19 @@ This module contains tests for the repository implementations, focusing on
 JSON repositories for jobs, chunks, and segments.
 """
 
-import os
-import tempfile
-import shutil
 import json
-import pytest
+import os
+import shutil
+import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from pyhearingai.core.idempotent import ProcessingJob, AudioChunk, ProcessingStatus, ChunkStatus
+import pytest
+
+from pyhearingai.core.idempotent import AudioChunk, ChunkStatus, ProcessingJob, ProcessingStatus
 from pyhearingai.infrastructure.repositories.json_repositories import (
-    JsonJobRepository,
     JsonChunkRepository,
+    JsonJobRepository,
 )
 from tests.utils.test_helpers import TestFixtures
 

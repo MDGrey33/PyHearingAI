@@ -10,17 +10,17 @@ The tests use a simple test audio file with the following speaker segments:
 - Silence: 2-3s and 5-6s
 """
 
-import unittest
-import tempfile
-import shutil
-from pathlib import Path
-import os
-import uuid
 import logging
+import os
+import shutil
+import tempfile
+import unittest
+import uuid
+from pathlib import Path
 
-from pyhearingai.core.idempotent import AudioChunk, ProcessingJob, ChunkStatus
-from pyhearingai.diarization.service import DiarizationService, _process_chunk_directly
+from pyhearingai.core.idempotent import AudioChunk, ChunkStatus, ProcessingJob
 from pyhearingai.diarization.repositories.diarization_repository import DiarizationRepository
+from pyhearingai.diarization.service import DiarizationService, _process_chunk_directly
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)

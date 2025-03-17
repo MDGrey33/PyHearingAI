@@ -6,8 +6,9 @@ that controls whether to use the new idempotent processing or the legacy approac
 """
 
 import os
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 # Import the feature flag from config
 from pyhearingai.config import USE_IDEMPOTENT_PROCESSING
@@ -22,6 +23,7 @@ class TestFeatureFlags:
         with patch.dict(os.environ, {}, clear=True):
             # Reimport to reload the module with fresh environment
             import importlib
+
             import pyhearingai.config
 
             importlib.reload(pyhearingai.config)
@@ -35,6 +37,7 @@ class TestFeatureFlags:
         with patch.dict(os.environ, {"PYHEARINGAI_USE_IDEMPOTENT_PROCESSING": "true"}):
             # Reimport to reload the module with updated environment
             import importlib
+
             import pyhearingai.config
 
             importlib.reload(pyhearingai.config)
@@ -48,6 +51,7 @@ class TestFeatureFlags:
         with patch.dict(os.environ, {"PYHEARINGAI_USE_IDEMPOTENT_PROCESSING": "false"}):
             # Reimport to reload the module with updated environment
             import importlib
+
             import pyhearingai.config
 
             importlib.reload(pyhearingai.config)
@@ -60,6 +64,7 @@ class TestFeatureFlags:
         # Test with mixed case "True"
         with patch.dict(os.environ, {"PYHEARINGAI_USE_IDEMPOTENT_PROCESSING": "TrUe"}):
             import importlib
+
             import pyhearingai.config
 
             importlib.reload(pyhearingai.config)
@@ -81,6 +86,7 @@ class TestTranscribeWithFlag:
         # Test with flag enabled
         with patch.dict(os.environ, {"PYHEARINGAI_USE_IDEMPOTENT_PROCESSING": "true"}):
             import importlib
+
             import pyhearingai.config
 
             importlib.reload(pyhearingai.config)
@@ -91,6 +97,7 @@ class TestTranscribeWithFlag:
         # Test with flag disabled
         with patch.dict(os.environ, {"PYHEARINGAI_USE_IDEMPOTENT_PROCESSING": "false"}):
             import importlib
+
             import pyhearingai.config
 
             importlib.reload(pyhearingai.config)
@@ -129,6 +136,7 @@ class TestCLIWithFlag:
         # Mock the environment and config to disable idempotent processing
         with patch.dict(os.environ, {"PYHEARINGAI_USE_IDEMPOTENT_PROCESSING": "false"}):
             import importlib
+
             import pyhearingai.config
 
             importlib.reload(pyhearingai.config)

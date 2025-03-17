@@ -5,17 +5,18 @@ These tests validate the entire pipeline from audio processing through
 diarization, transcription, and speaker assignment.
 """
 import os
-import time
 import tempfile
-import pytest
+import time
 from pathlib import Path
 
-from pyhearingai.core.idempotent import ProcessingJob, ProcessingStatus
-from pyhearingai.application.progress import ProgressTracker
+import pytest
+
 from pyhearingai.application.orchestrator import WorkflowOrchestrator
+from pyhearingai.application.progress import ProgressTracker
+from pyhearingai.core.idempotent import ProcessingJob, ProcessingStatus
 from pyhearingai.infrastructure.repositories.json_repositories import (
-    JsonJobRepository,
     JsonChunkRepository,
+    JsonJobRepository,
 )
 
 

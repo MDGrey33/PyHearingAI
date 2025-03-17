@@ -101,4 +101,4 @@ The output from the API is parsed using a sophisticated parsing algorithm:
 
 ## Conclusion
 
-The `ResponsesReconciliationAdapter` represents a significant improvement in handling longer audio files for transcription, addressing the token limit issues that previously restricted processing capabilities. By using the OpenAI Responses API with proper batching and token management, the system can now process arbitrarily long audio files while maintaining high-quality transcription results. 
+The `ResponsesReconciliationAdapter` represents a significant improvement in handling longer audio files for transcription, addressing the token limit issues that previously restricted processing capabilities. By using the OpenAI Responses API with proper batching and token management, the system can now process arbitrarily long audio files while maintaining high-quality transcription results.

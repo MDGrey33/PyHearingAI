@@ -13,8 +13,8 @@ import pytest
 
 from pyhearingai.application.resource_manager import (
     ResourceManager,
-    get_resource_manager,
     cleanup_resources,
+    get_resource_manager,
 )
 from pyhearingai.config import MEMORY_LIMIT, set_memory_limit
 

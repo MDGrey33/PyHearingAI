@@ -7,16 +7,16 @@ and more.
 """
 
 import os
-import unittest
-from unittest.mock import MagicMock, patch, PropertyMock
 import tempfile
-from pathlib import Path
+import unittest
 import uuid
+from pathlib import Path
+from unittest.mock import MagicMock, PropertyMock, patch
 
 from pyhearingai.core.idempotent import AudioChunk, ChunkStatus, ProcessingJob
 from pyhearingai.core.models import DiarizationSegment
-from pyhearingai.diarization.service import DiarizationService
 from pyhearingai.diarization.repositories.diarization_repository import DiarizationRepository
+from pyhearingai.diarization.service import DiarizationService
 
 
 class TestDiarizationService(unittest.TestCase):

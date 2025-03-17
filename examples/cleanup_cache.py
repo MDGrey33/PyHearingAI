@@ -6,10 +6,10 @@ This script cleans up the PyHearingAI cache directory to free up disk space.
 It removes cached chunks and job data that are no longer needed.
 """
 
+import argparse
 import os
 import shutil
 from pathlib import Path
-import argparse
 
 
 def get_cache_dir():

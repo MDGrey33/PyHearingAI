@@ -11,8 +11,8 @@ import logging
 import sys
 from pathlib import Path
 
-from pyhearingai.core.idempotent import ProcessingJob, ProcessingStatus
 from pyhearingai.application.audio_chunking import AudioChunkingService
+from pyhearingai.core.idempotent import ProcessingJob, ProcessingStatus
 from pyhearingai.transcription.service import TranscriptionService
 
 # Configure logging

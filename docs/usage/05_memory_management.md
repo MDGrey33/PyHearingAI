@@ -92,7 +92,7 @@ with PipelineSession(max_workers=2, chunk_size_seconds=30.0) as session:
     result1 = session.process("file1.mp3")
     result2 = session.process("file2.mp3")
     result3 = session.process("file3.mp3")
-    
+
     # Resources are automatically cleaned up when the session ends
 ```
 
@@ -187,4 +187,4 @@ If you encounter out-of-memory errors:
 1. **Set Memory Limit**: Use `set_memory_limit()` to prevent excessive memory usage
 2. **Use Time Ranges**: Process smaller portions of the audio file
 3. **Restart Python**: Start a fresh Python process for each large file
-4. **Upgrade Hardware**: Consider using a machine with more RAM for very large files 
+4. **Upgrade Hardware**: Consider using a machine with more RAM for very large files

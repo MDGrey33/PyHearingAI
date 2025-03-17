@@ -9,19 +9,19 @@ Usage:
     python test_idempotent.py <audio_file_path>
 """
 
+import logging
 import os
 import sys
-import logging
 from pathlib import Path
 
 import numpy as np
 
-from pyhearingai.config import TranscriptionConfig, IdempotentProcessingConfig
-from pyhearingai.core.idempotent import ProcessingJob
 from pyhearingai.application.audio_chunking import AudioChunkingService
+from pyhearingai.config import IdempotentProcessingConfig, TranscriptionConfig
+from pyhearingai.core.idempotent import ProcessingJob
 from pyhearingai.infrastructure.repositories.json_repositories import (
-    JsonJobRepository,
     JsonChunkRepository,
+    JsonJobRepository,
     JsonSegmentRepository,
 )
 

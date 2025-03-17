@@ -9,9 +9,9 @@ Usage:
     python test_diarization_service.py <audio_file_path> [--parallel|--sequential] [--workers N] [--debug]
 """
 
+import logging
 import os
 import sys
-import logging
 import time
 import traceback
 from pathlib import Path
@@ -21,8 +21,8 @@ from pyhearingai.config import IdempotentProcessingConfig, TranscriptionConfig
 from pyhearingai.core.idempotent import ProcessingJob
 from pyhearingai.diarization.service import DiarizationService
 from pyhearingai.infrastructure.repositories.json_repositories import (
-    JsonJobRepository,
     JsonChunkRepository,
+    JsonJobRepository,
 )
 
 # Configure logging

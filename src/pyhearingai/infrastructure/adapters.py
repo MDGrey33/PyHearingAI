@@ -27,6 +27,7 @@ from pyhearingai.infrastructure.speaker_assignment_gpt import GPTSpeakerAssigner
 # Import all transcribers
 from pyhearingai.infrastructure.transcribers import WhisperOpenAITranscriber
 
+
 # Explicitly initialize modules that might not be imported automatically
 def initialize_modules():
     """Force initialization of all modules with registered components."""
@@ -36,9 +37,10 @@ def initialize_modules():
     transcribers = [WhisperOpenAITranscriber]
     converters = [FFmpegAudioConverter]
     speaker_assigners = [DefaultSpeakerAssigner, GPTSpeakerAssigner]
-    
+
     # Return a dummy value to avoid optimization
     return True
+
 
 # Call the initialization function
 initialize_modules()

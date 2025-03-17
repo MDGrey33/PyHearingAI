@@ -5,22 +5,21 @@ This module contains integration tests for the TranscriptionService
 using synthetic audio files.
 """
 
-import unittest
-import tempfile
-import shutil
-import os
 import glob
-from pathlib import Path
 import logging
-from unittest.mock import patch, MagicMock
+import os
+import shutil
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-from pyhearingai.core.idempotent import ProcessingJob, ProcessingStatus, AudioChunk
-from pyhearingai.transcription.service import TranscriptionService
 from pyhearingai.application.audio_chunking import AudioChunkingService
-from pyhearingai.core.ports import Transcriber
+from pyhearingai.core.idempotent import AudioChunk, ProcessingJob, ProcessingStatus
 from pyhearingai.core.models import Segment
-from pyhearingai.infrastructure.registry import register_transcriber, _transcribers
-
+from pyhearingai.core.ports import Transcriber
+from pyhearingai.infrastructure.registry import _transcribers, register_transcriber
+from pyhearingai.transcription.service import TranscriptionService
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -44,31 +43,33 @@ The mock:
 This approach allows us to test the TranscriptionService's workflow and repository interactions
 without external dependencies on the OpenAI API.
 """
+
+
 @register_transcriber("whisper_openai")
 class MockWhisperOpenAITranscriber(Transcriber):
     """Mock Transcriber implementation for testing."""
-    
+
     def __init__(self):
         """Initialize the mock transcriber."""
         pass
-        
+
     @property
     def name(self) -> str:
         """Get the name of the transcriber."""
         return "whisper_openai"
-        
+
     @property
     def supports_segmentation(self) -> bool:
         """Whether this transcriber provides timing and segmentation."""
         return True
-        
+
     def transcribe(self, audio_path: Path, **kwargs) -> list[Segment]:
         """
         Mock transcription implementation that returns dummy segments.
-        
+
         Args:
             audio_path: Path to the audio file to transcribe
-            
+
         Returns:
             List of transcript segments
         """

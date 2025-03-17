@@ -12,13 +12,13 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from pyhearingai.core.idempotent import ProcessingJob, AudioChunk
-from pyhearingai.core.models import Segment, DiarizationSegment
-from pyhearingai.reconciliation.service import ReconciliationService
+from pyhearingai.core.idempotent import AudioChunk, ProcessingJob
+from pyhearingai.core.models import DiarizationSegment, Segment
+from pyhearingai.diarization.repositories.diarization_repository import DiarizationRepository
 from pyhearingai.reconciliation.repositories.reconciliation_repository import (
     ReconciliationRepository,
 )
-from pyhearingai.diarization.repositories.diarization_repository import DiarizationRepository
+from pyhearingai.reconciliation.service import ReconciliationService
 from pyhearingai.transcription.repositories.transcription_repository import TranscriptionRepository
 
 

@@ -16,4 +16,4 @@ if hasattr(job, 'original_audio_path'):
 # Add duration and chunk info
 prompt_parts.append(f"Total duration: {self._format_duration(job.duration if hasattr(job, 'duration') else 0)}\n")
 prompt_parts.append(f"Number of chunks: {len(diarization_segments)}\n\n")
-prompt_parts.append(f"## Audio Chunks\n\n") 
+prompt_parts.append(f"## Audio Chunks\n\n")

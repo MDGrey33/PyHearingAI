@@ -5,16 +5,16 @@ This module provides an adapter for using OpenAI's GPT-4 to reconcile
 diarization and transcription results into a coherent final transcript.
 """
 
-import logging
 import json
+import logging
 import os
 import re
-from typing import Dict, List, Optional, Any, Union
+from typing import Any, Dict, List, Optional, Union
 
 import openai
 
-from pyhearingai.core.models import Segment, DiarizationSegment
 from pyhearingai.core.idempotent import ProcessingJob
+from pyhearingai.core.models import DiarizationSegment, Segment
 from pyhearingai.reconciliation.adapters.base import BaseReconciliationAdapter
 
 logger = logging.getLogger(__name__)
@@ -68,8 +68,7 @@ class GPT4ReconciliationAdapter(BaseReconciliationAdapter):
         # Verify the API key is available
         if not self.client.api_key:
             raise ValueError(
-                "OpenAI API key not provided. "
-                "Set the OPENAI_API_KEY environment variable."
+                "OpenAI API key not provided. " "Set the OPENAI_API_KEY environment variable."
             )
 
         # Generate the prompt
@@ -104,7 +103,7 @@ class GPT4ReconciliationAdapter(BaseReconciliationAdapter):
 
     def _get_system_prompt(self, options: Optional[Dict[str, Any]] = None) -> str:
         """Generate the system prompt for GPT-4"""
-        return """You are an expert audio transcription assistant. Your task is to reconcile speaker diarization 
+        return """You are an expert audio transcription assistant. Your task is to reconcile speaker diarization
 and transcription data from multiple audio chunks into a coherent final transcript.
 
 Follow these guidelines:
@@ -114,8 +113,8 @@ Follow these guidelines:
 4. Properly attribute overlapping speech
 5. Output the final transcript as a JSON structure
 
-The user will provide you with information about diarization segments, transcription segments, 
-and individual segment transcriptions for each audio chunk. Use this information to create the best 
+The user will provide you with information about diarization segments, transcription segments,
+and individual segment transcriptions for each audio chunk. Use this information to create the best
 possible final transcript."""
 
     def _create_prompt(
@@ -246,14 +245,14 @@ Guidelines:
         try:
             # Initialize the JSON content
             json_content = response_content
-            
+
             # Check for different code block formats (```json, ```JSON, ``` with no language spec)
             code_block_patterns = [
-                r'```(?:json|JSON)?[\s\n]+(.*?)[\s\n]*```',  # Standard markdown code block
+                r"```(?:json|JSON)?[\s\n]+(.*?)[\s\n]*```",  # Standard markdown code block
                 r'{[\s\n]*"segments"[\s\n]*:.*?}',  # Direct JSON object with segments
-                r'\[[\s\n]*{.*?}[\s\n]*(?:,[\s\n]*{.*?})*[\s\n]*\]'  # Direct JSON array
+                r"\[[\s\n]*{.*?}[\s\n]*(?:,[\s\n]*{.*?})*[\s\n]*\]",  # Direct JSON array
             ]
-            
+
             # Try each pattern
             for pattern in code_block_patterns:
                 matches = re.findall(pattern, response_content, re.DOTALL)
@@ -262,36 +261,36 @@ Guidelines:
                     json_content = matches[0].strip()
                     logger.debug(f"Extracted JSON with pattern {pattern}: {json_content[:100]}...")
                     break
-            
+
             # If the content doesn't look like JSON, try to find any JSON-like structure
-            if not (json_content.startswith('{') or json_content.startswith('[')):
+            if not (json_content.startswith("{") or json_content.startswith("[")):
                 # Look for { or [ as starting points
-                json_start = max(response_content.find('{'), response_content.find('['))
+                json_start = max(response_content.find("{"), response_content.find("["))
                 if json_start >= 0:
                     # Find matching closing bracket
-                    if response_content[json_start] == '{':
+                    if response_content[json_start] == "{":
                         # Look for matching }
                         depth = 0
                         for i, char in enumerate(response_content[json_start:]):
-                            if char == '{':
+                            if char == "{":
                                 depth += 1
-                            elif char == '}':
+                            elif char == "}":
                                 depth -= 1
                                 if depth == 0:
-                                    json_content = response_content[json_start:json_start+i+1]
+                                    json_content = response_content[json_start : json_start + i + 1]
                                     break
                     else:
                         # Look for matching ]
                         depth = 0
                         for i, char in enumerate(response_content[json_start:]):
-                            if char == '[':
+                            if char == "[":
                                 depth += 1
-                            elif char == ']':
+                            elif char == "]":
                                 depth -= 1
                                 if depth == 0:
-                                    json_content = response_content[json_start:json_start+i+1]
+                                    json_content = response_content[json_start : json_start + i + 1]
                                     break
-            
+
             # Try to parse the JSON
             data = json.loads(json_content)
 
@@ -309,11 +308,11 @@ Guidelines:
                 # Handle differently formatted time values
                 start = segment_data.get("start", 0)
                 end = segment_data.get("end", 0)
-                
+
                 # Convert string time formats (HH:MM:SS.mmm) to seconds
                 if isinstance(start, str):
-                    if ':' in start:
-                        parts = start.replace(',', '.').split(':')
+                    if ":" in start:
+                        parts = start.replace(",", ".").split(":")
                         if len(parts) == 2:  # MM:SS format
                             start = float(parts[0]) * 60 + float(parts[1])
                         elif len(parts) == 3:  # HH:MM:SS format
@@ -324,10 +323,10 @@ Guidelines:
                             start = float(start)
                         except ValueError:
                             start = 0
-                
+
                 if isinstance(end, str):
-                    if ':' in end:
-                        parts = end.replace(',', '.').split(':')
+                    if ":" in end:
+                        parts = end.replace(",", ".").split(":")
                         if len(parts) == 2:  # MM:SS format
                             end = float(parts[0]) * 60 + float(parts[1])
                         elif len(parts) == 3:  # HH:MM:SS format
@@ -338,7 +337,7 @@ Guidelines:
                             end = float(end)
                         except ValueError:
                             end = 0
-                
+
                 # Create the segment, with fallbacks for missing fields
                 try:
                     segment = Segment(
@@ -354,18 +353,19 @@ Guidelines:
 
             # Sort segments by start time to ensure proper order
             segments.sort(key=lambda s: s.start)
-            
+
             # Log summary
             logger.info(f"Successfully parsed {len(segments)} segments")
-            
+
             return segments
 
         except Exception as e:
             import traceback
+
             logger.error(f"Error parsing GPT-4 response: {str(e)}")
             logger.error(f"Response content: {response_content}")
             logger.error(f"Traceback: {traceback.format_exc()}")
-            
+
             # Include the failed response in the error to aid extraction in ReconciliationService
             error_msg = f"Failed to parse GPT-4 response: {str(e)}\n\n{response_content}"
             raise ValueError(error_msg)

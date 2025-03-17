@@ -1,7 +1,7 @@
 """
 Audio chunking services for PyHearingAI.
 
-This module provides functionality to split large audio files into smaller, 
+This module provides functionality to split large audio files into smaller,
 manageable chunks for more efficient processing and to enable resumable operations.
 """
 
@@ -16,7 +16,6 @@ import soundfile as sf
 
 from pyhearingai.config import IdempotentProcessingConfig
 from pyhearingai.core.idempotent import AudioChunk, ProcessingJob
-
 
 logger = logging.getLogger(__name__)
 
@@ -87,20 +86,22 @@ class AudioChunkingService:
         audio_path = job.original_audio_path
         y, sr = librosa.load(audio_path, sr=None)
         full_duration = librosa.get_duration(y=y, sr=sr)
-        
+
         # Apply time range constraints if specified
         start_time = job.start_time if job.start_time is not None else 0
         end_time = job.end_time if job.end_time is not None else full_duration
-        
+
         # Validate time range
         if start_time >= full_duration:
             raise ValueError(f"Start time {start_time}s exceeds audio duration {full_duration}s")
         if end_time > full_duration:
-            logger.warning(f"End time {end_time}s exceeds audio duration {full_duration}s, capping at {full_duration}s")
+            logger.warning(
+                f"End time {end_time}s exceeds audio duration {full_duration}s, capping at {full_duration}s"
+            )
             end_time = full_duration
         if start_time >= end_time:
             raise ValueError(f"Start time {start_time}s must be less than end time {end_time}s")
-            
+
         # Extract the requested time range
         start_sample = int(start_time * sr)
         end_sample = int(end_time * sr)
@@ -119,8 +120,13 @@ class AudioChunkingService:
 
         # Calculate chunk boundaries with overlap
         chunk_boundaries = self._calculate_chunk_boundaries(
-            duration, chunk_duration, overlap_duration, y, sr, silence_regions,
-            start_offset=start_time  # Pass the start offset to maintain correct timestamps
+            duration,
+            chunk_duration,
+            overlap_duration,
+            y,
+            sr,
+            silence_regions,
+            start_offset=start_time,  # Pass the start offset to maintain correct timestamps
         )
 
         # Create chunks
@@ -129,7 +135,7 @@ class AudioChunkingService:
             # Convert time to samples, handling None values for job.start_time
             job_start = job.start_time if job.start_time is not None else 0
             start_sample = int((start_time - job_start) * sr)  # Adjust for job start time
-            end_sample = int((end_time - job_start) * sr)      # Adjust for job start time
+            end_sample = int((end_time - job_start) * sr)  # Adjust for job start time
 
             # Extract chunk audio
             chunk_audio = y[start_sample:end_sample]
@@ -147,39 +153,46 @@ class AudioChunkingService:
             logger.info(f"Chunk {i} size: {chunk_size} bytes, limit: {max_size} bytes")
 
             if chunk_size > max_size:
-                logger.info(f"Chunk {i} exceeds size limit ({chunk_size} > {max_size}). Adjusting quality...")
-                
+                logger.info(
+                    f"Chunk {i} exceeds size limit ({chunk_size} > {max_size}). Adjusting quality..."
+                )
+
                 # Try to reduce the file size by adjusting quality
-                from pyhearingai.infrastructure.adapters.size_aware_audio_converter import SizeAwareFFmpegConverter
+                from pyhearingai.infrastructure.adapters.size_aware_audio_converter import (
+                    SizeAwareFFmpegConverter,
+                )
+
                 converter = SizeAwareFFmpegConverter()
-                
+
                 try:
                     # Log the path before conversion
                     logger.info(f"Before conversion - chunk path: {chunk_path}")
                     logger.info(f"Before conversion - exists check: {chunk_path.exists()}")
                     logger.info(f"Before conversion - absolute path: {chunk_path.absolute()}")
-                    
+
                     # Convert with size constraint
                     adjusted_path, metadata = converter.convert_with_size_constraint(
                         chunk_path,
                         max_size,
                         target_format="wav",
                         sample_rate=16000,  # Start with reasonable quality
-                        channels=1
+                        channels=1,
                     )
-                    
+
                     # Log the result of conversion
                     logger.info(f"After conversion - adjusted path: {adjusted_path}")
                     logger.info(f"After conversion - exists check: {adjusted_path.exists()}")
                     logger.info(f"After conversion - absolute path: {adjusted_path.absolute()}")
-                    
+
                     # Verify the adjusted file exists before continuing
                     if not adjusted_path.exists():
                         raise FileNotFoundError(f"Adjusted file not found: {adjusted_path}")
-                    
+
                     # Update chunk path to use the size-constrained version
                     chunk_path = adjusted_path
-                    logger.info(f"Successfully adjusted chunk {i} to meet size limit: {os.path.getsize(chunk_path)} bytes")
+                    logger.info(
+                        f"Successfully adjusted chunk {i} to meet size limit: {os.path.getsize(chunk_path)} bytes"
+                    )
                 except Exception as e:
                     logger.error(f"Failed to adjust chunk {i} size: {e}")
                     logger.exception("Detailed error information:")

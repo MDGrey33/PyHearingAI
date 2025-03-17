@@ -9,7 +9,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Any
+from typing import Any, Dict, List, Optional, Union
 
 from pyhearingai.core.models import Segment
 
@@ -218,28 +218,28 @@ class ReconciliationRepository:
     def get_job_metadata(self, job_id: str) -> Optional[Dict[str, Any]]:
         """
         Get metadata for a job from the reconciled result file.
-        
+
         Args:
             job_id: ID of the processing job
-            
+
         Returns:
             Dictionary of metadata, or None if not found or no metadata exists
         """
         reconciliation_dir = self._get_reconciliation_dir(job_id)
         file_path = reconciliation_dir / "reconciled.json"
-        
+
         if not file_path.exists():
             logger.debug(f"No reconciled result file found for job {job_id}")
             return {}
-            
+
         try:
             with open(file_path, "r") as f:
                 data = json.load(f)
-                
+
             metadata = data.get("metadata", {})
             logger.debug(f"Loaded metadata for job {job_id}")
             return metadata
-            
+
         except Exception as e:
             logger.error(f"Error loading metadata for job {job_id}: {str(e)}")
             return {}

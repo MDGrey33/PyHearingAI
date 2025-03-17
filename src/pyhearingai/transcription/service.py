@@ -5,14 +5,14 @@ This module provides a service that performs speech transcription on audio chunk
 and speaker segments, with support for idempotent processing and resumability.
 """
 
-import logging
-from pathlib import Path
-from typing import Dict, List, Optional, Union, Any
-import time
 import concurrent.futures
+import logging
+import time
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
-from pyhearingai.core.idempotent import AudioChunk, SpeakerSegment, ProcessingJob, ChunkStatus
-from pyhearingai.core.models import Segment, DiarizationSegment
+from pyhearingai.core.idempotent import AudioChunk, ChunkStatus, ProcessingJob, SpeakerSegment
+from pyhearingai.core.models import DiarizationSegment, Segment
 from pyhearingai.transcription.adapters.whisper import WhisperAdapter
 from pyhearingai.transcription.repositories.transcription_repository import TranscriptionRepository
 

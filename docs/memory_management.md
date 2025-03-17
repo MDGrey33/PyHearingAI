@@ -157,4 +157,4 @@ While the memory management features help control resource usage, they have some
 
 3. **Manual intervention may be needed**: For extremely memory-intensive operations, manual intervention (such as calling `cleanup_resources`) may still be needed.
 
-For more information about memory management in PyHearingAI, see the [Resource Management](resource_management.md) documentation. 
+For more information about memory management in PyHearingAI, see the [Resource Management](resource_management.md) documentation.

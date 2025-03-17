@@ -7,25 +7,25 @@ results into a coherent final output, using GPT-4 for advanced reconciliation.
 
 import logging
 import os
-from pathlib import Path
-from typing import Dict, List, Optional, Union, Any, Tuple
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from pyhearingai.core.idempotent import ProcessingJob, AudioChunk
-from pyhearingai.core.models import Segment, DiarizationSegment
-from pyhearingai.reconciliation.adapters.gpt import GPT4ReconciliationAdapter
-from pyhearingai.reconciliation.adapters.responses import ResponsesReconciliationAdapter
-from pyhearingai.reconciliation.adapters.base import BaseReconciliationAdapter
-from pyhearingai.reconciliation.repositories.reconciliation_repository import (
-    ReconciliationRepository,
-)
+from pyhearingai.core.idempotent import AudioChunk, ProcessingJob
+from pyhearingai.core.models import DiarizationSegment, Segment
 from pyhearingai.diarization.repositories.diarization_repository import DiarizationRepository
-from pyhearingai.transcription.repositories.transcription_repository import TranscriptionRepository
 from pyhearingai.infrastructure.repositories.json_repositories import (
     JsonChunkRepository,
     JsonSegmentRepository,
 )
+from pyhearingai.reconciliation.adapters.base import BaseReconciliationAdapter
+from pyhearingai.reconciliation.adapters.gpt import GPT4ReconciliationAdapter
+from pyhearingai.reconciliation.adapters.responses import ResponsesReconciliationAdapter
+from pyhearingai.reconciliation.repositories.reconciliation_repository import (
+    ReconciliationRepository,
+)
+from pyhearingai.transcription.repositories.transcription_repository import TranscriptionRepository
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BatchConfig:
     """Configuration for batched reconciliation"""
-    
+
     def __init__(
         self,
         batch_size_seconds: int = 180,
@@ -43,7 +43,7 @@ class BatchConfig:
     ):
         """
         Initialize batch configuration
-        
+
         Args:
             batch_size_seconds: Size of each batch in seconds
             batch_overlap_seconds: Overlap between batches in seconds
@@ -85,7 +85,7 @@ class ReconciliationService:
         self.repository = reconciliation_repository or ReconciliationRepository()
         self.diarization_repository = diarization_repository or DiarizationRepository()
         self.transcription_repository = transcription_repository or TranscriptionRepository()
-        
+
         # Select the appropriate adapter based on the feature flag
         if use_responses_api:
             logger.info("Using ResponsesReconciliationAdapter for token-efficient processing")
@@ -97,7 +97,7 @@ class ReconciliationService:
         # Initialize additional repositories for chunk and segment data
         self.chunk_repository = JsonChunkRepository()
         self.segment_repository = JsonSegmentRepository()
-        
+
         # Store configuration
         self.model = self.adapter.model
         self.use_responses_api = use_responses_api
@@ -150,7 +150,7 @@ class ReconciliationService:
             options: Optional settings for the reconciliation process
             force: Whether to force reconciliation even if results exist
             progressive: Whether to use progressive reconciliation
-            
+
         Returns:
             List of reconciled segments
         """
@@ -169,33 +169,37 @@ class ReconciliationService:
         diarization_segments = {}
         transcription_segments = {}
         segment_transcriptions = {}
-        
+
         # Get all segments for all chunks
         for chunk in chunks:
             # Get diarization segments
             diarization_result = self.diarization_repository.get(job.id, chunk.id)
             if diarization_result:
                 diarization_segments[chunk.id] = diarization_result
-            
+
             # Get transcription segments and their text content
-            transcription_result = self.transcription_repository.get_chunk_transcription(job.id, chunk.id)
+            transcription_result = self.transcription_repository.get_chunk_transcription(
+                job.id, chunk.id
+            )
             if transcription_result:
                 transcription_segments[chunk.id] = transcription_result
-                
+
                 # Get text for each segment
                 for segment in transcription_result:
                     segment_key = f"{chunk.id}:{segment.start:.2f}-{segment.end:.2f}"
                     segment_id = f"{chunk.id}_segment_{segment.start:.2f}-{segment.end:.2f}"
-                    text = self.transcription_repository.get_segment_transcription(job.id, segment_id)
+                    text = self.transcription_repository.get_segment_transcription(
+                        job.id, segment_id
+                    )
                     if text:
                         segment_transcriptions[segment_key] = text
-        
+
         logger.debug(
             f"Reconciling job {job.id} with {len(diarization_segments)} chunks, "
             f"{sum(len(segs) for segs in diarization_segments.values())} diarization segments, "
             f"{sum(len(segs) for segs in transcription_segments.values())} transcription segments"
         )
-        
+
         # Do the reconciliation
         try:
             # Call the adapter to reconcile
@@ -206,7 +210,7 @@ class ReconciliationService:
                 segment_transcriptions=segment_transcriptions,
                 options=options,
             )
-            
+
             # Save the result
             if reconciled_segments:
                 # Build some metadata to store with the results
@@ -216,12 +220,12 @@ class ReconciliationService:
                     "num_segments": len(reconciled_segments),
                     "version": "1.0",
                 }
-                
+
                 # Save to the repository
                 self.repository.save_reconciled_result(job.id, reconciled_segments, metadata)
-                
+
             return reconciled_segments
-            
+
         except Exception as e:
             logger.error(f"Error during reconciliation: {str(e)}")
             raise
@@ -317,7 +321,7 @@ class ReconciliationService:
                 original_api_key = self.adapter._api_key
                 # Set the API key on the adapter instance
                 self.adapter._api_key = api_key
-                
+
                 try:
                     # Call reconcile without passing api_key
                     reconciled_segments = self.adapter.reconcile(
@@ -325,7 +329,7 @@ class ReconciliationService:
                         diarization_segments=diarization_segments,
                         transcription_segments=transcription_segments,
                         segment_transcriptions=segment_transcriptions,
-                        options=options
+                        options=options,
                     )
                 finally:
                     # Restore original API key
@@ -337,9 +341,9 @@ class ReconciliationService:
                     diarization_segments=diarization_segments,
                     transcription_segments=transcription_segments,
                     segment_transcriptions=segment_transcriptions,
-                    options=options
+                    options=options,
                 )
-                
+
             # Save the reconciled results with progress metadata
             metadata = {
                 "progressive": True,
@@ -355,7 +359,9 @@ class ReconciliationService:
                     if len(completed_chunks) == len(all_chunks)
                     else f"_progress_{len(completed_chunks)}"
                 )
-                self.repository.save_reconciled_result(job.id + suffix, reconciled_segments, metadata)
+                self.repository.save_reconciled_result(
+                    job.id + suffix, reconciled_segments, metadata
+                )
 
             return reconciled_segments
 
@@ -384,7 +390,7 @@ class ReconciliationService:
                 return content
 
         # Import formatters
-        from pyhearingai.application.outputs import to_text, to_json, to_srt, to_vtt, to_markdown
+        from pyhearingai.application.outputs import to_json, to_markdown, to_srt, to_text, to_vtt
         from pyhearingai.core.models import TranscriptionResult
 
         # Create a TranscriptionResult object
@@ -466,85 +472,92 @@ class ReconciliationService:
     ) -> List[Segment]:
         """
         Reconcile transcription and diarization data in batches.
-        
+
         Args:
             job: The job to process
             config: Batch configuration
-            
+
         Returns:
             List of reconciled segments
         """
         if config is None:
             config = BatchConfig()
-            
+
         # Get all the audio chunks
         audio_chunks = self.chunk_repository.get_by_job_id(job.id)
         if not audio_chunks:
             logger.warning(f"No audio chunks found for job {job.id}")
             return []
-        
+
         # Sort chunks by start time
         audio_chunks.sort(key=lambda c: c.start_time)
-        
+
         # Use diarization segments if available, otherwise use transcription segments
         diarization_data = self.diarization_repository.get_all(job.id)
-        
+
         # Get job metadata
         job_metadata = self.repository.get_job_metadata(job.id)
         if job_metadata is None:
             logger.warning(f"No job metadata found for job {job.id}")
             job_metadata = {}
-        
+
         # Create batches from audio chunks
         total_duration = audio_chunks[-1].end_time - audio_chunks[0].start_time
         logger.info(f"Total audio duration: {total_duration:.2f} seconds")
-        
+
         # Calculate optimal batch size based on total duration and token limits
         if total_duration > 600:  # For very long recordings (>10 min)
             # Use smaller batches for very long recordings to avoid token issues
             config.batch_size_seconds = min(config.batch_size_seconds, 120)
-            logger.info(f"Using reduced batch size of {config.batch_size_seconds} seconds for long recording")
-        
+            logger.info(
+                f"Using reduced batch size of {config.batch_size_seconds} seconds for long recording"
+            )
+
         # Create batches with proper overlap
         batches = []
         batch_start = audio_chunks[0].start_time
-        
+
         # Ensure we don't create empty batches at the end
         max_end_time = audio_chunks[-1].end_time - config.min_batch_size_seconds
-        
+
         while batch_start < max_end_time:
             batch_end = min(batch_start + config.batch_size_seconds, audio_chunks[-1].end_time)
-            
+
             # Get chunks in this batch
             batch_chunks = []
             for chunk in audio_chunks:
                 # Include chunks that overlap with the batch time range
                 if chunk.end_time > batch_start and chunk.start_time < batch_end:
                     batch_chunks.append(chunk)
-            
+
             batches.append((batch_start, batch_end, batch_chunks))
-            
+
             # Move to next batch with overlap
             batch_start = batch_end - config.batch_overlap_seconds
-            
+
         logger.info(f"Created {len(batches)} batches for reconciliation")
-        
+
         # Process each batch
         all_segments = []
-        
+
         for i, (start_time, end_time, batch_chunks) in enumerate(batches):
-            logger.info(f"Processing batch {i+1}/{len(batches)}: {start_time:.2f}s - {end_time:.2f}s ({len(batch_chunks)} chunks)")
-            
+            logger.info(
+                f"Processing batch {i+1}/{len(batches)}: {start_time:.2f}s - {end_time:.2f}s ({len(batch_chunks)} chunks)"
+            )
+
             # Skip empty batches
             if not batch_chunks:
                 logger.warning(f"Skipping empty batch {i+1}")
                 continue
-                
+
             try:
                 # Collect data for this batch
-                diarization_segments, transcription_segments, segment_transcriptions = \
-                    self._collect_data_for_batch(batch_chunks, start_time, end_time)
-                
+                (
+                    diarization_segments,
+                    transcription_segments,
+                    segment_transcriptions,
+                ) = self._collect_data_for_batch(batch_chunks, start_time, end_time)
+
                 # Use batch-specific options
                 batch_options = {
                     "batch_index": i,
@@ -554,131 +567,150 @@ class ReconciliationService:
                     "is_first_batch": i == 0,
                     "is_last_batch": i == len(batches) - 1,
                     # Estimate token count to avoid hitting limits
-                    "max_tokens": min(config.max_tokens_per_batch, 
-                                     7000 - min(2000, sum(len(t) for t in segment_transcriptions.values()) // 4)),
+                    "max_tokens": min(
+                        config.max_tokens_per_batch,
+                        7000 - min(2000, sum(len(t) for t in segment_transcriptions.values()) // 4),
+                    ),
                 }
-                
+
                 # Log batch stats
                 total_segments = sum(len(segs) for segs in diarization_segments.values())
                 total_text_length = sum(len(text) for text in segment_transcriptions.values())
-                logger.info(f"Batch {i+1} stats: {total_segments} segments, {total_text_length} chars, " +
-                          f"estimated tokens: {total_text_length // 4}, max_tokens: {batch_options['max_tokens']}")
-                
-                if total_text_length // 4 > batch_options['max_tokens'] * 2:
-                    logger.warning(f"Batch {i+1} may exceed token limits. Reducing segment count...")
+                logger.info(
+                    f"Batch {i+1} stats: {total_segments} segments, {total_text_length} chars, "
+                    + f"estimated tokens: {total_text_length // 4}, max_tokens: {batch_options['max_tokens']}"
+                )
+
+                if total_text_length // 4 > batch_options["max_tokens"] * 2:
+                    logger.warning(
+                        f"Batch {i+1} may exceed token limits. Reducing segment count..."
+                    )
                     # Dynamically reduce the batch size if it's likely to exceed token limits
                     adjusted_end_time = start_time + (end_time - start_time) * 0.6
-                    logger.info(f"Adjusting batch end time from {end_time:.2f}s to {adjusted_end_time:.2f}s")
-                    
+                    logger.info(
+                        f"Adjusting batch end time from {end_time:.2f}s to {adjusted_end_time:.2f}s"
+                    )
+
                     # Recollect data with adjusted time
-                    diarization_segments, transcription_segments, segment_transcriptions = \
-                        self._collect_data_for_batch(batch_chunks, start_time, adjusted_end_time)
-                    
+                    (
+                        diarization_segments,
+                        transcription_segments,
+                        segment_transcriptions,
+                    ) = self._collect_data_for_batch(batch_chunks, start_time, adjusted_end_time)
+
                     # Update batch end time
                     batch_options["batch_end"] = adjusted_end_time
                     end_time = adjusted_end_time
-                    
+
                     # Log adjusted batch stats
                     total_segments = sum(len(segs) for segs in diarization_segments.values())
                     total_text_length = sum(len(text) for text in segment_transcriptions.values())
-                    logger.info(f"Adjusted batch {i+1} stats: {total_segments} segments, {total_text_length} chars")
-                
+                    logger.info(
+                        f"Adjusted batch {i+1} stats: {total_segments} segments, {total_text_length} chars"
+                    )
+
                 # Process this batch
                 batch_result = self.adapter.reconcile(
                     job=job,
                     diarization_segments=diarization_segments,
                     transcription_segments=transcription_segments,
                     segment_transcriptions=segment_transcriptions,
-                    options=batch_options
+                    options=batch_options,
                 )
-                
+
                 # Save the batch result with a unique interim job ID
                 interim_job_id = f"{job.id}_batch_{i}"
                 self.repository.save_reconciled_result(interim_job_id, batch_result)
-                
+
                 # Add segments to the combined result
                 for segment in batch_result:
                     # Only include segments that are within this batch range (accounting for overlap)
-                    if (segment.start >= start_time and segment.end <= end_time) or \
-                       (i == 0 and segment.start < start_time) or \
-                       (i == len(batches) - 1 and segment.end > end_time):
+                    if (
+                        (segment.start >= start_time and segment.end <= end_time)
+                        or (i == 0 and segment.start < start_time)
+                        or (i == len(batches) - 1 and segment.end > end_time)
+                    ):
                         all_segments.append(segment)
                     # For overlapping segments, only include them in the earlier batch
-                    elif segment.start < end_time and segment.end > start_time and i < len(batches) - 1:
+                    elif (
+                        segment.start < end_time
+                        and segment.end > start_time
+                        and i < len(batches) - 1
+                    ):
                         # Check if this segment is more in this batch than the next
                         segment_middle = (segment.start + segment.end) / 2
                         if segment_middle < end_time:
                             all_segments.append(segment)
             except Exception as e:
                 logger.error(f"Error processing batch {i+1}: {str(e)}")
-                
+
                 # Try to extract segments from the error message if it contains JSON
                 extracted_segments = self._extract_segments_from_error(str(e))
                 if extracted_segments:
                     logger.info(f"Extracted {len(extracted_segments)} segments from error message")
-                    
+
                     # Add segments to the combined result
                     all_segments.extend(extracted_segments)
-                    
+
                     # Save the extracted segments
                     interim_job_id = f"{job.id}_batch_{i}_recovered"
                     self.repository.save_reconciled_result(interim_job_id, extracted_segments)
-                
+
                 # If there's still an overlap with the next batch, reduce the current batch size
                 # and proceed with the next batch to ensure we don't miss any content
                 if i < len(batches) - 1:
-                    next_start, next_end, next_chunks = batches[i+1]
-                    
+                    next_start, next_end, next_chunks = batches[i + 1]
+
                     # Adjust the next batch to start earlier if needed
                     if next_start > start_time + config.min_batch_size_seconds:
                         # Start the next batch right after where this one started + min size
                         new_next_start = start_time + config.min_batch_size_seconds
-                        batches[i+1] = (new_next_start, next_end, next_chunks)
-                        logger.info(f"Adjusted next batch to start at {new_next_start:.2f}s after batch failure")
-        
+                        batches[i + 1] = (new_next_start, next_end, next_chunks)
+                        logger.info(
+                            f"Adjusted next batch to start at {new_next_start:.2f}s after batch failure"
+                        )
+
         # Sort all segments by start time
         all_segments.sort(key=lambda s: s.start)
-        
+
         # Merge overlapping segments with same speaker
         merged_segments = self._merge_overlapping_segments(all_segments)
-        
+
         # Save the final reconciled result
         self.repository.save_reconciled_result(job.id, merged_segments)
-        
+
         return merged_segments
 
     def _collect_data_for_batch(
-        self,
-        chunks: List[AudioChunk],
-        start_time: float,
-        end_time: float
+        self, chunks: List[AudioChunk], start_time: float, end_time: float
     ) -> Tuple[Dict[str, List[DiarizationSegment]], Dict[str, List[str]], Dict[str, str]]:
         """
         Collect diarization and transcription data for a batch of chunks.
-        
+
         Args:
             chunks: Chunks in the batch
             start_time: Batch start time
             end_time: Batch end time
-            
+
         Returns:
             Tuple of (diarization_segments, transcription_segments, segment_transcriptions)
         """
         diarization_segments = {}
         transcription_segments = {}
         segment_transcriptions = {}
-        
+
         for chunk in chunks:
             # Get diarization segments
             chunk_diarization = self.diarization_repository.get(chunk.job_id, chunk.id)
             if chunk_diarization:
                 # Filter segments in the batch time range
                 filtered_segments = [
-                    segment for segment in chunk_diarization
+                    segment
+                    for segment in chunk_diarization
                     if (segment.end > start_time and segment.start < end_time)
                 ]
                 diarization_segments[chunk.id] = filtered_segments
-                
+
             # Get transcription segments
             chunk_transcription = self.transcription_repository.get_chunk_transcription(
                 chunk.job_id, chunk.id
@@ -686,40 +718,43 @@ class ReconciliationService:
             if chunk_transcription:
                 # Filter segments in the batch time range
                 filtered_segments = [
-                    segment for segment in chunk_transcription
+                    segment
+                    for segment in chunk_transcription
                     if (segment.end > start_time and segment.start < end_time)
                 ]
                 transcription_segments[chunk.id] = filtered_segments
-                
+
                 # Get segment transcriptions
                 for i, segment in enumerate(filtered_segments):
                     # Generate a segment ID if not available
-                    segment_id = getattr(segment, 'id', f"segment_{i}")
-                    segment_text = self.transcription_repository.get_segment_transcription(chunk.job_id, segment_id)
+                    segment_id = getattr(segment, "id", f"segment_{i}")
+                    segment_text = self.transcription_repository.get_segment_transcription(
+                        chunk.job_id, segment_id
+                    )
                     if segment_text:
                         segment_transcriptions[f"{chunk.id}_{segment_id}"] = segment_text
-                        
+
         return diarization_segments, transcription_segments, segment_transcriptions
 
     def _merge_overlapping_segments(self, segments: List[Segment]) -> List[Segment]:
         """
         Merge overlapping segments with the same speaker.
-        
+
         Args:
             segments: List of segments to merge
-            
+
         Returns:
             List of merged segments
         """
         if not segments:
             return []
-        
+
         # Sort segments by start time
         segments.sort(key=lambda s: s.start)
-        
+
         merged_segments = []
         current_segment = segments[0]
-        
+
         for segment in segments[1:]:
             if segment.start <= current_segment.end:
                 # Merge segments if they overlap
@@ -728,39 +763,39 @@ class ReconciliationService:
                 # Append current segment to merged list and start new current segment
                 merged_segments.append(current_segment)
                 current_segment = segment
-        
+
         # Append the last segment
         merged_segments.append(current_segment)
-        
+
         return merged_segments
 
     def _extract_segments_from_error(self, error_message: str) -> List[Segment]:
         """
         Extract segments from an error message that might contain JSON.
-        
+
         When GPT-4 returns a valid response but the parser fails, we try to
         extract the segments from the error message.
-        
+
         Args:
             error_message: The error message that might contain segments
-            
+
         Returns:
             List of segments extracted from the error message, or empty list if extraction fails
         """
         try:
-            import re
             import json
+            import re
             from datetime import datetime
-            
+
             logger.info("Attempting to extract segments from error message")
-            
+
             # Look for any JSON array or object in the error message
             json_patterns = [
                 r'\[\s*{\s*".*?}\s*\]',  # JSON array
                 r'{\s*"segments"\s*:\s*\[\s*{.*?}\s*\]\s*}',  # JSON object with segments key
                 r'{\s*".*?}\s*',  # JSON object
             ]
-            
+
             for pattern in json_patterns:
                 matches = re.findall(pattern, error_message, re.DOTALL)
                 if matches:
@@ -768,7 +803,7 @@ class ReconciliationService:
                     for match in matches:
                         try:
                             data = json.loads(match)
-                            
+
                             # Handle both array and object formats
                             if isinstance(data, list):
                                 segment_list = data
@@ -779,7 +814,7 @@ class ReconciliationService:
                                 segment_list = [data]
                             else:
                                 continue
-                            
+
                             # Create segments from the extracted data
                             segments = []
                             for segment_data in segment_list:
@@ -787,62 +822,74 @@ class ReconciliationService:
                                     # Handle various time formats
                                     start = segment_data.get("start", 0)
                                     end = segment_data.get("end", 0)
-                                    
+
                                     # Convert string times (HH:MM:SS) to seconds
                                     if isinstance(start, str):
                                         if ":" in start:
                                             # Time format like "00:01:23.456"
-                                            time_parts = start.replace(',', '.').split(':')
+                                            time_parts = start.replace(",", ".").split(":")
                                             if len(time_parts) == 3:
-                                                start = (float(time_parts[0]) * 3600 + 
-                                                        float(time_parts[1]) * 60 + 
-                                                        float(time_parts[2]))
+                                                start = (
+                                                    float(time_parts[0]) * 3600
+                                                    + float(time_parts[1]) * 60
+                                                    + float(time_parts[2])
+                                                )
                                             elif len(time_parts) == 2:
-                                                start = float(time_parts[0]) * 60 + float(time_parts[1])
+                                                start = float(time_parts[0]) * 60 + float(
+                                                    time_parts[1]
+                                                )
                                         else:
                                             try:
                                                 start = float(start)
                                             except ValueError:
                                                 start = 0
-                                            
+
                                     if isinstance(end, str):
                                         if ":" in end:
                                             # Time format like "00:01:23.456"
-                                            time_parts = end.replace(',', '.').split(':')
+                                            time_parts = end.replace(",", ".").split(":")
                                             if len(time_parts) == 3:
-                                                end = (float(time_parts[0]) * 3600 + 
-                                                      float(time_parts[1]) * 60 + 
-                                                      float(time_parts[2]))
+                                                end = (
+                                                    float(time_parts[0]) * 3600
+                                                    + float(time_parts[1]) * 60
+                                                    + float(time_parts[2])
+                                                )
                                             elif len(time_parts) == 2:
-                                                end = float(time_parts[0]) * 60 + float(time_parts[1])
+                                                end = float(time_parts[0]) * 60 + float(
+                                                    time_parts[1]
+                                                )
                                         else:
                                             try:
                                                 end = float(end)
                                             except ValueError:
                                                 end = 0
-                                    
+
                                     # Create segment with available fields
                                     segment = Segment(
                                         start=float(start),
                                         end=float(end),
                                         text=segment_data.get("text", ""),
-                                        speaker_id=segment_data.get("speaker_id", None)
+                                        speaker_id=segment_data.get("speaker_id", None),
                                     )
                                     segments.append(segment)
                                 except Exception as segment_error:
-                                    logger.warning(f"Error creating segment from data {segment_data}: {str(segment_error)}")
+                                    logger.warning(
+                                        f"Error creating segment from data {segment_data}: {str(segment_error)}"
+                                    )
                                     continue
-                            
+
                             if segments:
-                                logger.info(f"Successfully extracted {len(segments)} segments from error message")
+                                logger.info(
+                                    f"Successfully extracted {len(segments)} segments from error message"
+                                )
                                 return segments
                         except json.JSONDecodeError:
                             logger.debug(f"Failed to parse potential JSON match: {match[:100]}...")
                             continue
-            
+
             logger.warning("No valid JSON segments found in error message")
             return []
-            
+
         except Exception as e:
             logger.error(f"Error while extracting segments from error message: {str(e)}")
             return []

@@ -7,13 +7,14 @@ for displaying real-time progress information during processing.
 
 import io
 import time
-import pytest
-from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Import the correct classes based on what's used in the tests
 from pyhearingai.application.progress import ProgressTracker, create_progress_callback
-from pyhearingai.core.idempotent import ProcessingJob, AudioChunk, ProcessingStatus
+from pyhearingai.core.idempotent import AudioChunk, ProcessingJob, ProcessingStatus
 
 
 @pytest.fixture

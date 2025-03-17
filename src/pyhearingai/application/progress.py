@@ -8,9 +8,9 @@ including progress bars, ETA calculation, and status updates.
 import sys
 import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple, Any, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from pyhearingai.core.idempotent import ProcessingJob, AudioChunk, ProcessingStatus
+from pyhearingai.core.idempotent import AudioChunk, ProcessingJob, ProcessingStatus
 
 
 class ProgressTracker:

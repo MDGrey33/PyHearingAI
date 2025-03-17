@@ -15,9 +15,9 @@ import time
 from typing import List
 
 from pyhearingai.workers import (
-    WorkerPool,
     Task,
     TaskPriority,
+    WorkerPool,
     global_rate_limiters,
     global_supervisor,
 )

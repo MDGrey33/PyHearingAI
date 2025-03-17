@@ -4,15 +4,15 @@ Tests for the TranscriptionService.
 This module contains unit tests for the TranscriptionService and its components.
 """
 
-import unittest
-from unittest.mock import MagicMock, patch
-import tempfile
-from pathlib import Path
+import json
 import os
 import shutil
-import json
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-from pyhearingai.core.idempotent import AudioChunk, ProcessingJob, ChunkStatus, ProcessingStatus
+from pyhearingai.core.idempotent import AudioChunk, ChunkStatus, ProcessingJob, ProcessingStatus
 from pyhearingai.core.models import Segment
 from pyhearingai.transcription.service import TranscriptionService
 

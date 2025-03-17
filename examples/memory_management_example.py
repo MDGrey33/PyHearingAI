@@ -15,7 +15,7 @@ from pathlib import Path
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pyhearingai import transcribe_chunked, set_memory_limit, cleanup_resources
+from pyhearingai import cleanup_resources, set_memory_limit, transcribe_chunked
 
 
 def with_memory_limit(audio_path, limit_mb=1024):

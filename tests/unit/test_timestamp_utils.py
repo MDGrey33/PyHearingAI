@@ -8,14 +8,14 @@ converting between formats, and reconciling overlapping segments.
 import pytest
 
 from pyhearingai.application.timestamp_utils import (
-    format_timestamp,
-    parse_timestamp,
-    adjust_timestamp,
-    relative_to_absolute_time,
     absolute_to_relative_time,
     adjust_segment_timestamps,
+    adjust_timestamp,
     find_overlapping_segments,
+    format_timestamp,
     merge_overlapping_segments,
+    parse_timestamp,
+    relative_to_absolute_time,
 )
 from pyhearingai.core.idempotent import SpeakerSegment
 from pyhearingai.core.models import Segment

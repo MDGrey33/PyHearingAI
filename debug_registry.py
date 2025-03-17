@@ -13,10 +13,11 @@ sys.path.insert(0, str(Path(__file__).parent))
 print("Attempting to import registry...")
 try:
     from pyhearingai.infrastructure.registry import (
-        list_transcribers,
         list_diarizers,
         list_output_formatters,
+        list_transcribers,
     )
+
     print("Registry imported successfully")
 except ImportError as e:
     print(f"Error importing registry: {e}")
@@ -31,6 +32,7 @@ print("\nAttempting to import components directly:")
 try:
     print("\nImporting diarizers...")
     from pyhearingai.infrastructure.diarizers.pyannote import PyannoteDiarizer
+
     print("Pyannote diarizer imported successfully")
 except ImportError as e:
     print(f"Error importing Pyannote diarizer: {e}")
@@ -38,6 +40,7 @@ except ImportError as e:
 try:
     print("\nImporting transcribers...")
     from pyhearingai.infrastructure.transcribers.whisper_openai import WhisperOpenAITranscriber
+
     print("Whisper OpenAI transcriber imported successfully")
 except ImportError as e:
     print(f"Error importing Whisper OpenAI transcriber: {e}")
@@ -45,6 +48,7 @@ except ImportError as e:
 try:
     print("\nImporting formatters...")
     from pyhearingai.infrastructure.formatters.text import TextFormatter
+
     print("Text formatter imported successfully")
 except ImportError as e:
     print(f"Error importing Text formatter: {e}")
@@ -52,4 +56,4 @@ except ImportError as e:
 print("\nRechecking registered components:")
 print(f"Transcribers: {list_transcribers()}")
 print(f"Diarizers: {list_diarizers()}")
-print(f"Formatters: {list_output_formatters()}") 
+print(f"Formatters: {list_output_formatters()}")

@@ -7,19 +7,20 @@ using the Pyannote.audio library for speaker diarization.
 
 import json
 import logging
+import multiprocessing
 import os
+import platform
 import re
 import signal
+import subprocess
+import tempfile
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
-import tempfile
+
 import filelock
 import torch
-import multiprocessing
-import platform
-import subprocess
 
 # Import the real Pyannote pipeline
 try:
@@ -36,9 +37,12 @@ from pyhearingai.infrastructure.registry import register_diarizer
 
 logger = logging.getLogger(__name__)
 
+
 class DiarizationTimeoutError(Exception):
     """Exception raised when diarization exceeds the timeout limit."""
+
     pass
+
 
 @register_diarizer("pyannote")
 class PyannoteDiarizer(Diarizer):
@@ -51,24 +55,26 @@ class PyannoteDiarizer(Diarizer):
         """Initialize the diarizer."""
         self._api_key = api_key or os.getenv("HUGGINGFACE_API_KEY")
         self._pipeline = None
-        
+
         # Calculate optimal number of workers for the executor
         # For M3/M2 chips, use more workers to maximize performance
         cpu_count = multiprocessing.cpu_count()
         # Use half the available cores for the executor to avoid overwhelming the system
         # but ensure we have at least 2 workers for parallel operations
         optimal_workers = max(2, cpu_count // 2)
-        logger.debug(f"Initializing ThreadPoolExecutor with {optimal_workers} workers (system has {cpu_count} cores)")
+        logger.debug(
+            f"Initializing ThreadPoolExecutor with {optimal_workers} workers (system has {cpu_count} cores)"
+        )
         self._executor = ThreadPoolExecutor(max_workers=optimal_workers)
-        
+
         # Determine and store the best available device
         self._device = self._determine_device()
         logger.info(f"Pyannote will use device: {self._device}")
-        
+
         # Create cache directory with proper permissions
         cache_dir = Path(os.path.expanduser("~/.cache/torch/pyannote"))
         cache_dir.mkdir(parents=True, exist_ok=True)
-        
+
     def _determine_device(self):
         """Determine the best available device for PyTorch, prioritizing MPS for Apple Silicon."""
         # Check for MPS (Apple Silicon M-series) first
@@ -90,16 +96,15 @@ class PyannoteDiarizer(Diarizer):
                     try:
                         # Initialize pipeline with device placement
                         pipeline = Pipeline.from_pretrained(
-                            "pyannote/speaker-diarization@2.1",
-                            use_auth_token=use_auth_token
+                            "pyannote/speaker-diarization@2.1", use_auth_token=use_auth_token
                         )
-                        
+
                         # Configure pipeline for best performance based on available hardware
                         if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
                             # For Apple Silicon (M1/M2/M3), enable MPS
                             logger.info("Configuring pipeline for Apple Silicon with MPS")
                             os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
-                        
+
                         cls._shared_pipeline = pipeline
                         logger.info("Initialized shared PyAnnote pipeline")
                     except Exception as e:
@@ -123,14 +128,14 @@ class PyannoteDiarizer(Diarizer):
     def _run_diarization_with_timeout(self, audio_path: str, timeout: int = 7200) -> any:
         """
         Run diarization with a timeout.
-        
+
         Args:
             audio_path: Path to the audio file
             timeout: Timeout in seconds (default: 2 hours)
-            
+
         Returns:
             Diarization result
-            
+
         Raises:
             DiarizationTimeoutError: If the process exceeds the timeout
             Exception: For other diarization errors
@@ -138,7 +143,7 @@ class PyannoteDiarizer(Diarizer):
         try:
             future = self._executor.submit(self.pipeline, audio_path)
             return future.result(timeout=timeout)
-            
+
         except TimeoutError:
             # Clean up the pipeline on timeout
             self._pipeline = None
@@ -162,7 +167,7 @@ class PyannoteDiarizer(Diarizer):
 
         Returns:
             List of segments with speaker identification and timing information
-            
+
         Raises:
             DiarizationTimeoutError: If the process exceeds the timeout
             FileNotFoundError: If the audio file is not found
@@ -193,32 +198,34 @@ class PyannoteDiarizer(Diarizer):
                 logger.info(f"Using {device_info} for diarization")
                 # Set environment variables for MPS
                 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
-                
+
                 # Determine optimal batch size for Apple Silicon if not specified
                 if batch_size is None:
                     # Check if we're on an M3 Max or similar high-end chip
                     is_high_end = False
                     cpu_count = multiprocessing.cpu_count()
-                    
+
                     # Better detection for M3 Max
                     if platform.system() == "Darwin" and "arm" in platform.machine():
                         try:
                             # Try to detect M3 Max using system_profiler
                             result = subprocess.run(
-                                ["system_profiler", "SPHardwareDataType"], 
-                                capture_output=True, 
-                                text=True, 
-                                check=False
+                                ["system_profiler", "SPHardwareDataType"],
+                                capture_output=True,
+                                text=True,
+                                check=False,
                             )
                             chip_info = result.stdout.lower()
-                            is_high_end = "m3 max" in chip_info or "m3max" in chip_info or cpu_count >= 12
+                            is_high_end = (
+                                "m3 max" in chip_info or "m3max" in chip_info or cpu_count >= 12
+                            )
                             if "m3 max" in chip_info or "m3max" in chip_info:
                                 logger.info("Detected M3 Max processor for diarization")
                         except Exception as e:
                             logger.debug(f"Error detecting processor type: {e}")
                             # Fallback to CPU count for detection
                             is_high_end = cpu_count >= 12
-                    
+
                     # M3 Max or high core count Apple Silicon can handle larger batches
                     if is_high_end:
                         batch_size = 64
@@ -229,33 +236,35 @@ class PyannoteDiarizer(Diarizer):
                         logger.info(f"Using standard batch size {batch_size} for Apple Silicon")
                 else:
                     logger.info(f"Using user-specified batch size {batch_size} for MPS device")
-                
+
             elif self._device == "cuda":
                 # For CUDA devices
                 device_info = f"CUDA GPU ({torch.cuda.get_device_name(0)})"
                 logger.info(f"Using {device_info} for diarization")
-                
+
                 # Optimize CUDA settings if batch size not specified
                 if batch_size is None:
                     # Determine based on GPU memory
                     gpu_mem = torch.cuda.get_device_properties(0).total_memory / 1024**3  # in GB
                     batch_size = max(16, min(128, int(gpu_mem * 4)))  # scale with GPU memory
                 logger.info(f"Using batch size {batch_size} for CUDA device")
-                
+
             else:
                 # CPU optimizations
                 device_info = "CPU"
                 logger.info(f"Using {device_info} for diarization")
-                
+
                 # For CPUs, use a smaller batch size but utilize all cores
                 if batch_size is None:
                     cpu_count = multiprocessing.cpu_count()
                     batch_size = max(8, min(32, cpu_count * 2))  # scale with CPU count
-                logger.info(f"Using batch size {batch_size} for CPU with {multiprocessing.cpu_count()} cores")
-                
+                logger.info(
+                    f"Using batch size {batch_size} for CPU with {multiprocessing.cpu_count()} cores"
+                )
+
                 # Set optimal thread settings for CPU
                 torch.set_num_threads(multiprocessing.cpu_count())
-                
+
             # If we have a batch size from above, pass it to the pipeline
             if batch_size is not None:
                 kwargs["batch_size"] = batch_size
@@ -263,10 +272,12 @@ class PyannoteDiarizer(Diarizer):
             # Run diarization with timeout
             logger.info(f"Starting diarization with {timeout}s timeout")
             start_time = datetime.now()
-            
+
             diarization = self._run_diarization_with_timeout(str(audio_path), timeout)
-            
-            logger.info(f"Diarization completed in {(datetime.now() - start_time).total_seconds():.2f}s")
+
+            logger.info(
+                f"Diarization completed in {(datetime.now() - start_time).total_seconds():.2f}s"
+            )
 
             # Process results
             for turn, _, speaker in diarization.itertracks(yield_label=True):
@@ -435,23 +446,28 @@ class PyannoteDiarizer(Diarizer):
                 # Explicitly delete the pipeline to free GPU memory
                 del self._pipeline
                 self._pipeline = None
-                
+
                 # Call torch garbage collector if available
                 if PYANNOTE_AVAILABLE:
                     if self._device == "cuda" and torch.cuda.is_available():
                         torch.cuda.empty_cache()
-                    elif self._device == "mps" and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+                    elif (
+                        self._device == "mps"
+                        and hasattr(torch.backends, "mps")
+                        and torch.backends.mps.is_available()
+                    ):
                         # MPS doesn't have an explicit memory management function like CUDA,
                         # but we can force a garbage collection
                         import gc
+
                         gc.collect()
-                    
+
                 logger.debug(f"Pyannote diarizer resources released from {self._device} device")
             except Exception as e:
                 logger.warning(f"Error while closing Pyannote diarizer: {str(e)}")
-                
+
     def __del__(self):
         """Destructor to ensure resources are cleaned up."""
         self.close()
-        if hasattr(self, '_executor') and self._executor is not None:
+        if hasattr(self, "_executor") and self._executor is not None:
             self._executor.shutdown(wait=False)

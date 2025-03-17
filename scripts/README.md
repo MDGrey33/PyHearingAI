@@ -29,4 +29,4 @@ When adding new utility scripts:
 1. Place them in this directory
 2. Update this README with a brief description of the script
 3. Include proper documentation within the script
-4. Make sure the script follows the project's coding standards 
+4. Make sure the script follows the project's coding standards

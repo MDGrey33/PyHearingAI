@@ -5,10 +5,11 @@ This module contains tests for the worker components, including the Monitoring c
 and ThreadPoolExecutor pattern used in the orchestrator.
 """
 
-import pytest
 import time
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from pyhearingai.application.orchestrator import Monitoring
 

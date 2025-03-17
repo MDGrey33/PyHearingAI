@@ -9,14 +9,14 @@ with different speakers and predefined text.
 
 import argparse
 import logging
-import os
-import sys
-import wave
-import struct
 import math
+import os
 import random
-from pathlib import Path
+import struct
+import sys
 import uuid
+import wave
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(

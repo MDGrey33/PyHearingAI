@@ -210,7 +210,7 @@ class DiarizationRepository:
     def get_all(self, job_id: str) -> Dict[str, List[DiarizationSegment]]:
         """
         Get all diarization results for a specific job.
-        
+
         This is an alias for get_by_job_id for compatibility with the reconciliation service.
 
         Args:

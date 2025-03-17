@@ -65,4 +65,4 @@ Alternatively, if you're running the examples from the repository, the scripts w
 
 Each example script includes detailed comments explaining how it works. You can also run any example with the `-h` flag to see usage information.
 
-For more detailed documentation, refer to the main [PyHearingAI README](../README.md) and the [documentation directory](../docs). 
+For more detailed documentation, refer to the main [PyHearingAI README](../README.md) and the [documentation directory](../docs).

@@ -8,28 +8,28 @@ with support for chunking, parallel processing, and progress tracking.
 import logging
 import time
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
-from datetime import datetime
 
+from pyhearingai.application.orchestrator import WorkflowOrchestrator
+from pyhearingai.application.progress import ProgressTracker, create_progress_callback
 from pyhearingai.config import USE_IDEMPOTENT_PROCESSING
-from pyhearingai.core.idempotent import ProcessingJob, ProcessingStatus, AudioChunk
+from pyhearingai.core.idempotent import AudioChunk, ProcessingJob, ProcessingStatus
 from pyhearingai.core.models import TranscriptionResult
 from pyhearingai.diarization.service import DiarizationService
-from pyhearingai.transcription.service import TranscriptionService
-from pyhearingai.reconciliation.service import ReconciliationService
-from pyhearingai.infrastructure.repositories.json_repositories import (
-    JsonJobRepository,
-    JsonChunkRepository,
-)
 from pyhearingai.infrastructure.registry import (
     get_converter,
     get_diarizer,
     get_speaker_assigner,
     get_transcriber,
 )
-from pyhearingai.application.progress import ProgressTracker, create_progress_callback
-from pyhearingai.application.orchestrator import WorkflowOrchestrator
+from pyhearingai.infrastructure.repositories.json_repositories import (
+    JsonChunkRepository,
+    JsonJobRepository,
+)
+from pyhearingai.reconciliation.service import ReconciliationService
+from pyhearingai.transcription.service import TranscriptionService
 
 logger = logging.getLogger(__name__)
 
@@ -96,8 +96,8 @@ def process_job_legacy(
     Returns:
         A TranscriptionResult object
     """
-    from pyhearingai.core.models import Segment, TranscriptionResult
     from pyhearingai.application.outputs import save_transcript
+    from pyhearingai.core.models import Segment, TranscriptionResult
 
     # NOTE: Don't set up logging here as it's already configured in the transcribe function
     logger.info("Using legacy (non-idempotent) processing mode")

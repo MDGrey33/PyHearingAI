@@ -8,17 +8,18 @@ This module contains tests for the CLI functionality including:
 - Progress visualization
 """
 
-import os
-import pytest
-import tempfile
-import shutil
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import argparse
+import os
+import shutil
+import tempfile
 import uuid
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-from pyhearingai.cli import main, list_jobs, find_job_by_audio_path
-from pyhearingai.core.idempotent import ProcessingJob, ProcessingStatus, AudioChunk
+import pytest
+
+from pyhearingai.cli import find_job_by_audio_path, list_jobs, main
+from pyhearingai.core.idempotent import AudioChunk, ProcessingJob, ProcessingStatus
 from pyhearingai.infrastructure.repositories.json_repositories import JsonJobRepository
 
 

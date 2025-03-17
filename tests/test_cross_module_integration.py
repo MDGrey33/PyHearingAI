@@ -4,16 +4,16 @@ Simplified cross-module integration test for PyHearingAI.
 This test focuses on basic service interactions with minimal imports.
 """
 
-import unittest
-import tempfile
-import os
 import logging
-from unittest.mock import patch, MagicMock
+import os
+import tempfile
+import unittest
+from unittest.mock import MagicMock, patch
 
 # Import only the services we need
 from pyhearingai.diarization.service import DiarizationService
-from pyhearingai.transcription.service import TranscriptionService
 from pyhearingai.reconciliation.service import ReconciliationService
+from pyhearingai.transcription.service import TranscriptionService
 
 
 class TestCrossModuleIntegration(unittest.TestCase):

@@ -13,13 +13,11 @@ import tempfile
 from pathlib import Path
 
 # Import initialization module to ensure components are registered
-from pyhearingai import initialization
-
-from pyhearingai import __version__
+from pyhearingai import __version__, initialization
 from pyhearingai.application.transcribe import transcribe
+from pyhearingai.config import IdempotentProcessingConfig
 from pyhearingai.core.idempotent import ProcessingStatus
 from pyhearingai.infrastructure.repositories.json_repositories import JsonJobRepository
-from pyhearingai.config import IdempotentProcessingConfig
 
 
 def list_jobs():
@@ -156,7 +154,7 @@ For more information, visit: https://github.com/MDGrey33/PyHearingAI
         default=0.0,
         help="Overlap between consecutive chunks in seconds (default: 0.0)",
     )
-    
+
     # Batch processing options
     parser.add_argument(
         "--batch-size",

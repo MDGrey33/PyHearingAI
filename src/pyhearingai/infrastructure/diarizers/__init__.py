@@ -9,9 +9,3 @@ with the registry when the package is imported.
 from pyhearingai.infrastructure.diarizers.pyannote import PyannoteDiarizer
 
 __all__ = ["PyannoteDiarizer"]
-
-
-
-
-
-

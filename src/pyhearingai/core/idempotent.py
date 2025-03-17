@@ -158,7 +158,7 @@ class ProcessingJob:
         self.overlap_duration = overlap_duration
         self.start_time = start_time
         self.end_time = end_time
-        
+
         # Status tracking
         self.status = ProcessingStatus.PENDING
         self.error = None

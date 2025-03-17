@@ -8,17 +8,18 @@ including chunk creation, silence detection, and timestamp handling.
 import os
 import tempfile
 from pathlib import Path
-import pytest
+from unittest.mock import MagicMock, patch
+
 import numpy as np
-from unittest.mock import patch, MagicMock
+import pytest
 
 from pyhearingai.application.audio_chunking import AudioChunkingService
 from pyhearingai.application.timestamp_utils import (
-    relative_to_absolute_time,
     absolute_to_relative_time,
+    relative_to_absolute_time,
 )
-from pyhearingai.core.idempotent import ProcessingJob, AudioChunk, ChunkStatus
 from pyhearingai.config import IdempotentProcessingConfig
+from pyhearingai.core.idempotent import AudioChunk, ChunkStatus, ProcessingJob
 
 # Import the test helpers
 from tests.utils.test_helpers import TestFixtures

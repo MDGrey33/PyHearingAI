@@ -8,12 +8,12 @@ idempotent processing workflow with customized chunk size and overlap.
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from pyhearingai import transcribe_chunked
-from pyhearingai.core.models import TranscriptionResult, Segment
+from pyhearingai.core.models import Segment, TranscriptionResult
 from tests.utils.test_helpers import TestFixtures
 
 

@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
-
 # Feature flags
 USE_IDEMPOTENT_PROCESSING = (
     os.environ.get("PYHEARINGAI_USE_IDEMPOTENT_PROCESSING", "false").lower() == "true"

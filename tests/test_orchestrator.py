@@ -6,19 +6,19 @@ the execution of the various services in the PyHearingAI system.
 """
 
 import os
-import tempfile
-import pytest
-from unittest.mock import MagicMock, patch, call
-import signal
 import shutil
+import signal
+import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock, call, patch
 
-from pyhearingai.application.orchestrator import WorkflowOrchestrator, Monitoring
+import pytest
+
+from pyhearingai.application.orchestrator import Monitoring, WorkflowOrchestrator
 from pyhearingai.application.progress import ProgressTracker
-from pyhearingai.core.idempotent import ProcessingJob, AudioChunk, ProcessingStatus, ChunkStatus
-from pyhearingai.core.models import TranscriptionResult, Segment
-
-from tests.utils.test_helpers import TestFixtures, MockServices
+from pyhearingai.core.idempotent import AudioChunk, ChunkStatus, ProcessingJob, ProcessingStatus
+from pyhearingai.core.models import Segment, TranscriptionResult
+from tests.utils.test_helpers import MockServices, TestFixtures
 
 
 class TestWorkflowOrchestrator:
@@ -39,8 +39,8 @@ class TestWorkflowOrchestrator:
     def repositories(self, temp_data_dir):
         """Create repositories with a temporary directory."""
         from pyhearingai.infrastructure.repositories.json_repositories import (
-            JsonJobRepository,
             JsonChunkRepository,
+            JsonJobRepository,
         )
 
         jobs_dir = os.path.join(temp_data_dir, "jobs")

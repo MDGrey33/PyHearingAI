@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from pyhearingai import pipeline_session
 from pyhearingai.application.session import Session
 from pyhearingai.core.models import Segment, TranscriptionResult

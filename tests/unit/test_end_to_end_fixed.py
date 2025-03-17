@@ -5,17 +5,18 @@ These tests validate the entire pipeline from audio processing through
 diarization, transcription, and speaker assignment.
 """
 import os
-import time
 import tempfile
-import pytest
+import time
 from pathlib import Path
 
-from pyhearingai.core.idempotent import ProcessingJob, ProcessingStatus
-from pyhearingai.application.progress import ProgressTracker
+import pytest
+
 from pyhearingai.application.orchestrator import WorkflowOrchestrator
+from pyhearingai.application.progress import ProgressTracker
+from pyhearingai.core.idempotent import ProcessingJob, ProcessingStatus
 from pyhearingai.infrastructure.repositories.json_repositories import (
-    JsonJobRepository,
     JsonChunkRepository,
+    JsonJobRepository,
 )
 
 
@@ -133,7 +134,7 @@ class TestEndToEnd:
                             os.remove(file_path)
                         except (OSError, IOError) as e:
                             print(f"Warning: Failed to remove file {file_path}: {e}")
-                    
+
                     # Then remove empty directories
                     for dir_name in dirs:
                         dir_path = os.path.join(root, dir_name)
@@ -141,7 +142,7 @@ class TestEndToEnd:
                             os.rmdir(dir_path)
                         except (OSError, IOError) as e:
                             print(f"Warning: Failed to remove directory {dir_path}: {e}")
-                
+
                 # Finally remove the top directory
                 try:
                     os.rmdir(directory)
@@ -202,7 +203,7 @@ class TestEndToEnd:
         # Verify job was processed successfully
         assert result is not None
         assert result.segments is not None
-        
+
         # In tests, we might get empty segments due to the short test audio
         # So we'll just check that the job completed without errors
         assert job.status == ProcessingStatus.COMPLETED
@@ -217,7 +218,7 @@ class TestEndToEnd:
 
         # Verify job has updated processing_options
         assert job.processing_options is not None
-        
+
         # Verify result metadata exists
         assert result.metadata is not None
         assert "created_at" in result.metadata
@@ -286,10 +287,10 @@ class TestEndToEnd:
 
         # Verify we have segments
         assert result.segments is not None
-        
+
         # No need to assert there are segments, as the test audio might not produce any
         # The important thing is that the job completed successfully
-        
+
         # Verify result has metadata
         assert result.metadata is not None
 

@@ -11,7 +11,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, Optional, TypeVar, Generic
+from typing import Any, Callable, Dict, Generic, Optional, TypeVar
 
 logger = logging.getLogger(__name__)
 

@@ -5,32 +5,32 @@ These tests verify the ReconciliationService functionality with real data from
 diarization and transcription services.
 """
 
-import unittest
-import tempfile
+import json
+import logging
 import os
 import shutil
-import json
+import tempfile
+import unittest
 from pathlib import Path
-from typing import Dict, List, Any
-import logging
+from typing import Any, Dict, List
 
 from pyhearingai.core.idempotent import (
-    ProcessingJob,
-    ProcessingStatus,
     AudioChunk,
     ChunkStatus,
+    ProcessingJob,
+    ProcessingStatus,
     SpeakerSegment,
 )
-from pyhearingai.core.models import Segment, DiarizationSegment
+from pyhearingai.core.models import DiarizationSegment, Segment
+from pyhearingai.diarization.repositories.diarization_repository import DiarizationRepository
 from pyhearingai.diarization.service import DiarizationService
-from pyhearingai.transcription.service import TranscriptionService
-from pyhearingai.reconciliation.service import ReconciliationService
+from pyhearingai.infrastructure.repositories.json_repositories import JsonChunkRepository
 from pyhearingai.reconciliation.repositories.reconciliation_repository import (
     ReconciliationRepository,
 )
-from pyhearingai.diarization.repositories.diarization_repository import DiarizationRepository
+from pyhearingai.reconciliation.service import ReconciliationService
 from pyhearingai.transcription.repositories.transcription_repository import TranscriptionRepository
-from pyhearingai.infrastructure.repositories.json_repositories import JsonChunkRepository
+from pyhearingai.transcription.service import TranscriptionService
 from tests.utils.audio_generator import create_test_audio_file
 
 # Configure logging
