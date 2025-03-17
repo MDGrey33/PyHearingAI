@@ -326,3 +326,153 @@ tests/
 - **Streaming**: Support for processing audio in chunks (future)
 - **Caching**: Cache intermediate results for repeated operations
 - **Memory Management**: Clean up resources after use
+
+## 12. Hardware Acceleration
+
+PyHearingAI intelligently adapts to the available hardware to maximize performance:
+
+### 12.1 Device Prioritization
+
+```python
+# Hardware is auto-detected in this priority order:
+# 1. Apple Silicon (Metal Performance Shaders) on Mac
+# 2. NVIDIA GPUs (CUDA) on Windows/Linux
+# 3. CPU with optimized thread allocation
+```
+
+### 12.2 Device Configuration
+
+```python
+from pyhearingai.config import configure_hardware
+
+# Manually configure hardware preferences
+configure_hardware(
+    use_mps=True,       # Enable Apple Silicon acceleration
+    use_cuda=True,      # Enable NVIDIA GPU acceleration
+    use_cpu_threads=8   # Set CPU thread limit
+)
+```
+
+### 12.3 Multi-core Processing
+
+```python
+# The WorkflowOrchestrator automatically manages threading
+from pyhearingai import transcribe
+
+result = transcribe(
+    "conference.mp3",
+    max_workers=8,       # Control number of worker threads
+    chunk_size=15.0      # Control audio chunk size in seconds
+)
+```
+
+## 13. Progress Reporting System
+
+PyHearingAI includes a comprehensive progress tracking system that provides real-time feedback on long-running tasks:
+
+### 13.1 Progress Callback Interface
+
+```python
+def my_progress_handler(progress_info):
+    """
+    Handle progress updates.
+
+    Args:
+        progress_info: Dictionary with progress information
+            - stage: Current processing stage
+            - progress: Float between 0.0 and 1.0
+            - message: Optional status message
+            - details: Additional information dict
+    """
+    stage = progress_info.get('stage', 'unknown')
+    percent = progress_info.get('progress', 0) * 100
+    message = progress_info.get('message', '')
+    print(f"{stage}: {percent:.1f}% - {message}")
+
+result = transcribe(
+    "long_recording.mp3",
+    progress_callback=my_progress_handler
+)
+```
+
+### 13.2 Terminal Progress Bars
+
+When running in a terminal environment, PyHearingAI automatically provides rich progress bars:
+
+```
+Overall Progress: [████████████████████████████████] 100% | 42.8s
+Batch 3/5: [█████████████████░░░░░░░░░░░░░░░░] 60% | ETA: 28s
+Transcribing chunks: [██████████████████████████████] 100% | 18/18 complete
+```
+
+### 13.3 Progress Tracking in Library Mode
+
+```python
+from pyhearingai import transcribe
+from pyhearingai.utils.progress import ProgressTracker
+
+# Create a custom progress tracker
+tracker = ProgressTracker()
+
+# Register custom event handlers
+@tracker.on_stage_change
+def handle_stage_change(stage_name):
+    print(f"Starting stage: {stage_name}")
+
+@tracker.on_progress_update
+def handle_progress(stage, progress, message):
+    print(f"{stage}: {progress:.1%} - {message}")
+
+# Use the custom tracker
+result = transcribe(
+    "long_recording.mp3",
+    progress_tracker=tracker
+)
+```
+
+## 14. Batch Processing for Long Files
+
+For handling extensive audio files, PyHearingAI implements intelligent batching:
+
+### 14.1 Automatic Batch Sizing
+
+```python
+from pyhearingai import transcribe
+
+# Process long files with automatic batch sizing
+result = transcribe(
+    "8hour_conference.mp3",
+    auto_batch=True,      # Enable automatic batch sizing
+    max_batch_size=20,    # Maximum chunks per batch
+    chunk_size=10.0       # Chunk size in seconds
+)
+```
+
+### 14.2 Manual Batch Control
+
+```python
+from pyhearingai import transcribe
+
+# Manually control batch processing
+result = transcribe(
+    "long_recording.mp3",
+    chunk_size=15.0,      # 15-second chunks
+    batch_size=10,        # Process 10 chunks per batch
+    max_workers=4         # Use 4 worker threads
+)
+```
+
+### 14.3 ResponsesReconciliationAdapter
+
+For optimal performance with OpenAI models, PyHearingAI includes a specialized adapter:
+
+```python
+from pyhearingai import transcribe
+
+# Enable the Responses API adapter for efficient token usage
+result = transcribe(
+    "long_interview.mp3",
+    use_responses_api=True,  # Enable the ResponsesReconciliationAdapter
+    max_batch_size=15        # Control maximum batch size
+)
+```

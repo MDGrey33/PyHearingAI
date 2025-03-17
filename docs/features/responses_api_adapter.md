@@ -12,6 +12,8 @@ The `ResponsesReconciliationAdapter` is an implementation of the `BaseReconcilia
 - **Robust Serialization**: Handles complex data types with proper serialization for API calls
 - **Graceful Error Handling**: Provides detailed error messages and failover mechanisms
 - **Parallel Processing**: Processes multiple batches concurrently for faster results
+- **Real-time Progress Tracking**: Provides detailed progress updates during processing
+- **Hardware Acceleration**: Leverages available hardware (MPS, CUDA) for faster diarization
 
 ## Architecture
 
@@ -34,6 +36,18 @@ service = ReconciliationService(use_responses_api=True)
 result = transcribe(
     audio_path="path/to/audio.mp3",
     use_responses_api=True
+)
+
+# With progress tracking
+def progress_callback(progress_info):
+    stage = progress_info.get('stage', 'unknown')
+    percent = progress_info.get('progress', 0) * 100
+    print(f"Processing {stage}: {percent:.1f}% complete")
+
+result = transcribe(
+    audio_path="path/to/audio.mp3",
+    use_responses_api=True,
+    progress_callback=progress_callback
 )
 ```
 
@@ -73,6 +87,24 @@ The `BatchProcessor` class is responsible for creating optimized batches of audi
 3. Each batch contains chunk data and segment transcriptions
 4. Batches are processed sequentially to maintain conversation context
 
+### Hardware Acceleration
+
+The adapter leverages the following hardware acceleration features:
+
+1. **Apple Silicon Support**: Utilizes Metal Performance Shaders (MPS) on Mac devices
+2. **CUDA Support**: Leverages NVIDIA GPUs on compatible systems
+3. **Optimized CPU Threading**: Balances thread allocation for optimal performance
+4. **Automatic Device Selection**: Chooses the best available hardware automatically
+
+### Progress Reporting
+
+The adapter implements comprehensive progress tracking:
+
+1. **Batch Progress**: Tracks progress at the batch level with estimated time remaining
+2. **Stage Progress**: Reports progress for each stage (diarization, transcription, reconciliation)
+3. **Terminal UI**: Provides rich progress bars when running in a terminal environment
+4. **Callback Interface**: Allows custom handling of progress updates
+
 ### Prompt Formatting
 
 The adapter uses a specialized prompt format optimized for audio transcription tasks:
@@ -98,6 +130,8 @@ The output from the API is parsed using a sophisticated parsing algorithm:
 3. **Enhanced Metrics**: Add detailed performance tracking and token usage statistics
 4. **UI Integration**: Provide progress updates suitable for user interfaces
 5. **Parallel Batch Processing**: Process multiple batches simultaneously when they don't depend on each other
+6. **Further Hardware Optimizations**: Implement additional optimizations for specific hardware platforms
+7. **Advanced Progress Visualization**: Add more detailed progress visualization options
 
 ## Conclusion
 

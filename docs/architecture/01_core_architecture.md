@@ -175,3 +175,101 @@ except TranscriptionError as e:
         # Use partial results
         print(e.partial.text)
 ```
+
+## 8. Hardware Acceleration
+
+PyHearingAI automatically detects and utilizes available hardware acceleration:
+
+```python
+# The system uses the optimal device without configuration
+result = transcribe("interview.mp3")
+
+# Under the hood, device prioritization happens:
+# 1. Apple Silicon (MPS) on Mac
+# 2. NVIDIA GPUs (CUDA)
+# 3. CPU with optimized threading
+```
+
+### 8.1 Hardware Detection
+
+```python
+from pyhearingai.infrastructure.diarizers.pyannote import PyannoteDiarizer
+
+# Instantiate the diarizer to see what hardware is being used
+diarizer = PyannoteDiarizer()
+print(f"Using device: {diarizer._device}")  # Will show "mps", "cuda", or "cpu"
+```
+
+### 8.2 Advanced Resource Configuration
+
+```python
+from pyhearingai import transcribe
+
+# Configure specific resource usage
+result = transcribe(
+    "long_file.mp3",
+    max_workers=4,  # Control thread pool size
+    chunk_size=15.0  # Control audio chunk size in seconds
+)
+```
+
+## 9. Progress Tracking
+
+### 9.1 Simple Progress Callback
+
+```python
+def progress_callback(progress_info):
+    stage = progress_info.get('stage', 'unknown')
+    percent = progress_info.get('progress', 0) * 100
+    print(f"Processing {stage}: {percent:.1f}% complete")
+
+result = transcribe(
+    "long_recording.mp3",
+    progress_callback=progress_callback
+)
+```
+
+### 9.2 Rich Progress Reporting
+
+PyHearingAI provides rich progress reporting in the terminal:
+
+```
+Overall Progress: [████████████████████████████████] 100% | 42.8s
+Batch 3/5: [█████████████████░░░░░░░░░░░░░░░░] 60% | ETA: 28s
+Transcribing chunks: [██████████████████████████████] 100% | 18/18 complete
+```
+
+The progress reporting system includes:
+- Overall job progress with time estimates
+- Batch-level progress tracking
+- Individual step progress (diarization, transcription, etc.)
+- Estimated time to completion
+- Performance metrics
+
+## 10. Performance Optimization
+
+### 10.1 Batch Processing
+
+```python
+from pyhearingai import transcribe
+
+# Process long files efficiently with automatic batching
+result = transcribe(
+    "long_conference.mp3",
+    chunk_size=10.0,  # 10-second chunks
+    batch_size=10     # Process 10 chunks per batch
+)
+```
+
+### 10.2 Memory Management
+
+```python
+from pyhearingai import transcribe
+
+# Configure memory usage
+result = transcribe(
+    "large_file.mp3",
+    keep_audio_in_memory=False,  # Store chunks on disk
+    cleanup_after_processing=True  # Remove temporary files
+)
+```

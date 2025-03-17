@@ -112,6 +112,13 @@ PyHearingAI follows Clean Architecture principles with a well-organized code str
   - Markdown
 - Clean Architecture design for maintainability and extensibility
 - End-to-end testing framework
+- Hardware acceleration support:
+  - Apple Silicon (M-series) with Metal Performance Shaders (MPS)
+  - CUDA GPUs for enhanced performance
+  - Automatic hardware detection and optimization
+- Advanced progress reporting with time estimates
+- Intelligent resource utilization for multi-core processors
+- Optimized for longer audio files with efficient batching
 - Progress tracking for long-running processes
 - Comprehensive error handling
 - Command-line interface
@@ -216,6 +223,33 @@ result = transcribe(
     "long_recording.mp3",
     progress_callback=progress_callback
 )
+```
+
+With the enhanced progress reporting system, you'll also see rich progress bars in the terminal showing:
+- Overall job progress
+- Current batch processing status
+- Estimated time remaining
+- Processing speed metrics
+
+### Hardware Acceleration
+
+PyHearingAI automatically detects and utilizes available hardware acceleration:
+
+```python
+from pyhearingai import transcribe
+
+# The system will automatically use the best available hardware
+# - MPS for Apple Silicon M-series processors
+# - CUDA for NVIDIA GPUs
+# - CPU with optimized thread allocation for other systems
+result = transcribe("long_interview.mp3")
+
+# You can also check what hardware acceleration is being used
+from pyhearingai.infrastructure.diarizers.pyannote import PyannoteDiarizer
+
+diarizer = PyannoteDiarizer()
+device = diarizer._device  # "mps", "cuda", or "cpu"
+print(f"Using {device} for diarization")
 ```
 
 ### Working with Results
