@@ -83,27 +83,27 @@ class TestHardwareDetection:
         mock_process.stdout = "Hardware: MacBook Pro (M3 Max, 2023)"
         mock_subprocess.return_value = mock_process
 
-        # Create diarizer and patch internal methods to avoid actual initialization
+        # Create diarizer with mocked initialization
         with patch.object(PyannoteDiarizer, "_initialize_shared_pipeline"):
             diarizer = PyannoteDiarizer()
 
-            # Call diarize with minimal mocks to trigger processor detection
-            with patch.object(diarizer, "pipeline", MagicMock()):
-                with patch.object(diarizer, "_run_diarization_with_timeout", MagicMock()):
-                    # We need minimal mocks to avoid actual diarization
-                    mock_file = MagicMock()
-                    mock_file.exists.return_value = True
+            # Directly patch the _run_diarization_with_timeout method instead of the pipeline property
+            with patch.object(diarizer, "_run_diarization_with_timeout", return_value=MagicMock()):
+                # Mock file
+                mock_file = MagicMock()
+                mock_file.exists.return_value = True
+                mock_file.__str__.return_value = "/path/to/audio.wav"
 
-                    # Call diarize to trigger batch size detection
-                    diarizer.diarize(mock_file)
+                # Call diarize to trigger processor detection
+                diarizer.diarize(mock_file)
 
-                    # Verify system_profiler was called
-                    mock_subprocess.assert_called_with(
-                        ["system_profiler", "SPHardwareDataType"],
-                        capture_output=True,
-                        text=True,
-                        check=False,
-                    )
+                # Verify system_profiler was called
+                mock_subprocess.assert_called_with(
+                    ["system_profiler", "SPHardwareDataType"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
 
     @patch("torch.backends.mps.is_available")
     @patch("torch.cuda.is_available")
@@ -118,18 +118,18 @@ class TestHardwareDetection:
         diarizer = PyannoteDiarizer()
 
         # Call diarize with minimal mocks
-        with patch.object(diarizer, "_initialize_shared_pipeline"):
-            with patch.object(diarizer, "pipeline", MagicMock()):
-                with patch.object(diarizer, "_run_diarization_with_timeout", MagicMock()):
-                    # We need minimal mocks to avoid actual diarization
-                    mock_file = MagicMock()
-                    mock_file.exists.return_value = True
+        with patch.object(PyannoteDiarizer, "_initialize_shared_pipeline"):
+            with patch.object(diarizer, "_run_diarization_with_timeout", return_value=MagicMock()):
+                # Mock file
+                mock_file = MagicMock()
+                mock_file.exists.return_value = True
+                mock_file.__str__.return_value = "/path/to/audio.wav"
 
-                    # Call diarize to trigger CPU optimization
-                    diarizer.diarize(mock_file)
+                # Call diarize to trigger CPU optimization
+                diarizer.diarize(mock_file)
 
-                    # Verify CPU threads were optimized
-                    mock_set_threads.assert_called_once()
+                # Verify CPU threads were optimized
+                mock_set_threads.assert_called_once()
 
     @patch("torch.backends.mps.is_available")
     @patch("multiprocessing.cpu_count")

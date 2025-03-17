@@ -344,7 +344,7 @@ class TestEndToEnd:
                 }
 
                 print(f"Workers: {workers}, Duration: {duration:.2f}s")
-        except Exception as e:
+            except Exception as e:
                 print(f"Error with {workers} workers: {str(e)}")
             finally:
                 # Clean up
