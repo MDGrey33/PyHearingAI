@@ -10,7 +10,9 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import numpy as np
 import pytest
+import soundfile as sf
 
 # Import our test helpers
 from tests.helpers import (
@@ -308,3 +310,43 @@ def create_processing_job():
 
 
 # Add any fixtures that should be available to all tests here
+
+
+@pytest.fixture
+def create_valid_test_audio(tmp_path=None):
+    """Create a valid test audio file for testing transcription.
+
+    Args:
+        tmp_path: Optional path for the output file. If not provided,
+                 a random temporary file will be created.
+
+    Returns:
+        Path: Path to the created test audio file
+    """
+    # Create 1-second silent audio file
+    sample_rate = 16000
+    duration = 1.0
+    samples = np.zeros(int(sample_rate * duration), dtype=np.float32)
+
+    # Add a simple sine wave to make it non-silent
+    t = np.linspace(0, duration, int(sample_rate * duration), False)
+    samples += 0.1 * np.sin(2 * np.pi * 440 * t)
+
+    # If no path provided, use a temporary file
+    if tmp_path is None:
+        audio_path = Path(tempfile.mktemp(suffix=".wav"))
+    else:
+        # If tmp_path is a directory, create a file in it
+        if isinstance(tmp_path, Path) and tmp_path.is_dir():
+            audio_path = tmp_path / "test_audio.wav"
+        else:
+            # Use the provided path directly
+            audio_path = Path(tmp_path)
+
+    # Ensure parent directory exists
+    audio_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Write the audio file
+    sf.write(audio_path, samples, sample_rate)
+
+    return audio_path

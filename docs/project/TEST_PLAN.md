@@ -1,184 +1,324 @@
-# Test Plan for PyHearingAI
+# PyHearingAI Test Plan
 
 ## Overview
 
-This document outlines the testing strategy for PyHearingAI, focusing on the status of existing tests, identified issues, and recommendations for future test and feature development.
+This document outlines the plan for reimplementing the PyHearingAI test suite from scratch, following clean architecture principles and pytest best practices. The goal is to create a comprehensive, maintainable test suite that provides high coverage and effectively verifies the system's behavior.
 
-## Current Status
+## Test Architecture
 
-### CLI Tests
-All CLI tests in `tests/test_cli.py` are either passing or appropriately skipped:
-- Job listing and status reporting tests are passing
-- Job cancellation (`--cancel`) and job deletion (`--delete`) tests are skipped due to non-implementation of these features
-- The tests follow the best practices established in the project and have good coverage of the implemented functionality
+### Directory Structure
 
-### Repository Tests
-All repository tests in `tests/test_repositories.py` are either passing or appropriately skipped:
-- Most tests for the `JsonJobRepository` are passing
-- The `test_serialization_edge_cases` test is skipped due to the absence of a `processing_options` attribute in the `ProcessingJob` class
+The new test structure will be organized as follows:
 
-### Speaker Assignment Tests
-Tests in `tests/unit/test_speaker_assignment.py` and `tests/unit/test_speaker_assignment_gpt.py` are skipped because:
-- They attempt to instantiate abstract classes with abstract methods
-- This limitation requires architectural changes to properly implement these tests
+```
+tests/
+  unit/                  # Tests for components in isolation
+    domain/              # Tests for domain models and business rules
+    application/         # Tests for application services
+    infrastructure/      # Tests for infrastructure adapters
+  integration/           # Tests for component interactions
+    repositories/        # Tests for repository implementations
+    services/            # Tests for service integrations
+  functional/            # End-to-end tests
+  fixtures/              # Shared test fixtures
+    audio/               # Audio file generation fixtures
+    mocks/               # Mock service fixtures
+  utils/                 # Test utilities and helpers
+  conftest.py            # Global pytest configuration
+```
 
-### Transcription Tests
-Tests in `tests/unit/test_transcribe.py` are skipped due to:
-- Import errors for the non-existent `create_valid_test_audio` function
-- Implementation of this fixture is needed to enable these tests
+### Naming Conventions
 
-### Domain Events Tests
-Some tests in `tests/unit/test_domain_events.py` are skipped because:
-- The `AudioSizeExceededEvent` constructor has changed
-- Tests need to be updated to match the new constructor signature
+- Test files: `test_<component_name>.py`
+- Test classes: `Test<ComponentName>`
+- Test methods: `test_<functionality>_<condition>`
+- Fixtures: Descriptive names that indicate what they provide
 
-### Test Coverage
-- Current test coverage is at 33.65%
-- Required test coverage threshold is 89.5%
-- Significant work is needed to improve test coverage
+### Test Types
 
-## Identified Issues
+1. **Unit Tests**: Test individual components in isolation
+   - Fast, focused, use mocks for dependencies
+   - Test business rules, edge cases, error handling
+   - Located in `tests/unit/`
 
-1. **Job Management Features Missing in CLI**
-   - Job cancellation (`--cancel`) option is not implemented
-   - Job deletion (`--delete`) option is not implemented
-   - Tests for these features exist but are skipped
+2. **Integration Tests**: Test interactions between components
+   - Test repository implementations with test databases
+   - Test service dependencies and coordination
+   - Located in `tests/integration/`
 
-2. **ProcessingJob Class Issues**
-   - Missing `processing_options` attribute
-   - Tests related to serialization edge cases are skipped
+3. **Functional Tests**: Test end-to-end workflows
+   - Test user-facing functionality
+   - Minimal mocking, closer to real usage
+   - Located in `tests/functional/`
 
-3. **Abstract Class Instantiation in Tests**
-   - Some tests attempt to instantiate abstract classes with abstract methods
-   - These tests need to be redesigned
+## Test Implementation
 
-4. **Import Errors in Transcription Tests**
-   - `create_valid_test_audio` function is missing from conftest.py
-   - Multiple tests are skipped due to this dependency
+### Phase 1: Test Framework Setup
 
-5. **Constructor Parameter Changes**
-   - Some tests fail due to changes in constructor parameters
-   - Tests need to be updated to match current implementation
+#### 1.1 Directory Structure Creation
 
-6. **Low Test Coverage**
-   - Current coverage of 33.65% is significantly below the threshold
-   - Many parts of the codebase lack tests
+Create the directory structure as outlined above, with placeholder files and basic setup.
 
-## Recommendations
+#### 1.2 Core Fixtures Implementation
 
-### Short-term Improvements
+Create essential fixtures that will be reused across tests:
 
-1. **Implement CLI Job Management Features**:
-   - Add `--cancel` option to the CLI argument parser to allow canceling jobs
-   - Add `--delete` option to the CLI argument parser to allow deleting jobs
-   - Test these features with the existing tests (which are currently skipped)
-
-2. **Fix ProcessingJob Class**:
-   - Add a `processing_options` attribute to the `ProcessingJob` class
-   - Ensure the constructor properly handles all parameters (status, output_path, processing_options, etc.)
-   - Update tests to use the correct pattern for creating and initializing ProcessingJob objects
-
-### Long-term Improvements
-
-1. **Improve Test Coverage**:
-   - The current test coverage is 28.59%, far below the required 89.5%
-   - Focus on testing core functionality and high-risk areas first
-   - Consider using tools like pytest-cov to identify untested code paths
-
-2. **Mock External Dependencies**:
-   - Improve integration tests by properly mocking external dependencies
-   - Address the batch_size parameter error in diarization tests
-
-3. **Refactor Tests**:
-   - Organize tests more systematically, grouping related tests together
-   - Reduce duplication in test setup code through better use of fixtures
-   - Ensure consistent test naming and documentation
-
-## Implementation Plan
-
-### Phase 1: Fix Existing Tests
-
-1. Update `ProcessingJob` to support all required attributes and parameters
-2. Fix constructor parameter issues in tests
-3. Ensure repository serialization tests pass
-
-### Phase 2: Implement Missing CLI Features
-
-1. Add `--cancel` option to CLI:
+1. **Audio Generation**:
    ```python
-   input_group.add_argument("--cancel", type=str, help="Cancel the processing job with the specified ID")
+   @pytest.fixture
+   def create_test_audio():
+       """Create test audio files with configurable parameters."""
+       def _create(duration=1.0, sample_rate=16000, channels=1, **kwargs):
+           # Create and return audio file with specified parameters
+           pass
+       return _create
    ```
 
-2. Add `--delete` option to CLI:
+2. **Mock Services**:
    ```python
-   input_group.add_argument("--delete", type=str, help="Delete the processing job with the specified ID")
+   @pytest.fixture
+   def mock_transcription_service():
+       """Create a mock transcription service."""
+       service = MagicMock()
+       service.transcribe.return_value = [
+           {"text": "Test transcript", "start": 0.0, "end": 1.0}
+       ]
+       return service
    ```
 
-3. Implement handlers in the `main()` function:
+3. **Test Repository**:
    ```python
-   # Handle cancel command
-   if args.cancel:
-       job_id = args.cancel
-       job_repo = JsonJobRepository()
-       job = job_repo.get_by_id(job_id)
-
-       if not job:
-           print(f"Error: Job not found with ID: {job_id}", file=sys.stderr)
-           return 1
-
-       # Update job status to FAILED to indicate cancellation
-       job.status = ProcessingStatus.FAILED
-       job_repo.save(job)
-       print(f"Job canceled: {job_id}")
-       return 0
-
-   # Handle delete command
-   if args.delete:
-       job_id = args.delete
-       job_repo = JsonJobRepository()
-       job = job_repo.get_by_id(job_id)
-
-       if not job:
-           print(f"Error: Job not found with ID: {job_id}", file=sys.stderr)
-           return 1
-
-       # Delete the job
-       if job_repo.delete(job_id):
-           print(f"Job deleted: {job_id}")
-           return 0
-       else:
-           print(f"Error: Failed to delete job with ID: {job_id}", file=sys.stderr)
-           return 1
+   @pytest.fixture
+   def test_repository(tmp_path):
+       """Create a test repository with temp directory."""
+       repo = JsonRepository(base_path=tmp_path)
+       yield repo
+       # Cleanup
    ```
 
-4. Enable the skipped tests by removing the `@pytest.mark.skip` decorators
+#### 1.3 Test Utilities
 
-### Phase 3: Improve Test Coverage
+Create helper utilities for common test operations:
 
-1. Identify areas with low coverage
-2. Write additional tests focusing on high-risk or complex functionality
-3. Review and optimize existing tests
+```python
+def assert_segments_equal(actual, expected, tolerance=0.1):
+    """Assert that two segments are equal within a tolerance."""
+    assert len(actual) == len(expected)
+    for act, exp in zip(actual, expected):
+        assert act["text"] == exp["text"]
+        assert abs(act["start"] - exp["start"]) <= tolerance
+        assert abs(act["end"] - exp["end"]) <= tolerance
+```
 
-## Conclusion
+### Phase 2: Domain Model Tests
 
-All tests in the targeted test suites are now either passing or appropriately skipped:
+#### 2.1 Domain Entity Tests
 
-1. CLI Tests (`tests/test_cli.py`) - All passing or properly skipped
-2. Repository Tests (`tests/test_repositories.py`) - All passing or properly skipped
-3. Reconciliation Tests (`tests/test_reconciliation.py`) - All passing
-4. Diarization Tests (`tests/test_diarization.py`) - All passing
-5. Speaker Assignment Tests (`tests/unit/test_speaker_assignment.py`) - All skipped due to abstract class issues
-6. Speaker Assignment GPT Tests (`tests/unit/test_speaker_assignment_gpt.py`) - All skipped due to abstract class issues
-7. Domain Events Tests (`tests/unit/test_domain_events.py`) - Most passing, two skipped
-8. Transcribe Tests (`tests/unit/test_transcribe.py`) - Most skipped due to missing function, one passing
-9. Diarizer Tests (`tests/unit/test_diarizer.py`) - Some passing, some skipped due to missing methods
+Test domain entities, value objects, and business rules:
 
-The current test coverage is 34.58%, which is still significantly below the required threshold of 89.5%.
-Implementing the recommendations in this test plan will help increase test coverage and improve the overall
-quality of the codebase.
+```python
+def test_segment_validation():
+    """Test segment validation rules."""
+    # Valid segment
+    segment = Segment(start=0.0, end=1.0, text="Valid text")
+    assert segment.start == 0.0
+    assert segment.end == 1.0
+    assert segment.text == "Valid text"
 
-By addressing the issues identified in the test plan and implementing the missing features and functionality,
-PyHearingAI will become more stable, maintainable, and feature-complete.
+    # Invalid segment (start > end)
+    with pytest.raises(ValueError):
+        Segment(start=1.0, end=0.5, text="Invalid")
+```
+
+#### 2.2 Business Rule Tests
+
+Test core business logic:
+
+```python
+def test_audio_quality_constraints():
+    """Test audio quality constraints for different providers."""
+    # Test constraints for OpenAI Whisper
+    constraints = AudioQualityPolicy.get_constraints(Provider.OPENAI_WHISPER)
+    assert constraints.max_file_size == 25 * 1024 * 1024  # 25 MB
+    assert constraints.max_duration == 120  # 2 minutes
+```
+
+### Phase 3: Application Service Tests
+
+#### 3.1 Service Operation Tests
+
+Test application services with mocked dependencies:
+
+```python
+def test_transcription_service(create_test_audio, mock_provider):
+    """Test basic transcription functionality."""
+    # Arrange
+    audio_path = create_test_audio()
+    service = TranscriptionService(provider=mock_provider)
+
+    # Act
+    result = service.transcribe(audio_path)
+
+    # Assert
+    assert len(result) > 0
+    assert "text" in result[0]
+    assert mock_provider.transcribe.called_once_with(audio_path)
+```
+
+#### 3.2 Error Handling Tests
+
+Test how services handle errors:
+
+```python
+def test_transcription_service_error_handling(create_test_audio, mock_provider):
+    """Test error handling in transcription service."""
+    # Arrange
+    audio_path = create_test_audio()
+    mock_provider.transcribe.side_effect = ProviderError("API error")
+    service = TranscriptionService(provider=mock_provider)
+
+    # Act & Assert
+    with pytest.raises(TranscriptionError):
+        service.transcribe(audio_path)
+```
+
+### Phase 4: Infrastructure Tests
+
+#### 4.1 Repository Tests
+
+Test repository implementations:
+
+```python
+def test_json_repository_crud(tmp_path):
+    """Test CRUD operations on JSON repository."""
+    # Arrange
+    repo = JsonRepository(base_path=tmp_path)
+    item = {"id": "test-1", "data": "test data"}
+
+    # Act - Create
+    repo.save(item)
+
+    # Assert - Read
+    retrieved = repo.get("test-1")
+    assert retrieved["data"] == "test data"
+
+    # Act - Update
+    item["data"] = "updated data"
+    repo.save(item)
+
+    # Assert
+    updated = repo.get("test-1")
+    assert updated["data"] == "updated data"
+
+    # Act - Delete
+    repo.delete("test-1")
+
+    # Assert
+    assert repo.get("test-1") is None
+```
+
+#### 4.2 External Service Adapter Tests
+
+Test adapters to external services using mocks:
+
+```python
+@pytest.mark.vcr  # Use pytest-vcr to record and replay API calls
+def test_openai_transcriber(create_test_audio):
+    """Test OpenAI transcriber adapter."""
+    # Arrange
+    audio_path = create_test_audio()
+    transcriber = OpenAITranscriber(api_key="test-key")
+
+    # Act
+    result = transcriber.transcribe(audio_path)
+
+    # Assert
+    assert len(result) > 0
+    for segment in result:
+        assert "text" in segment
+        assert "start" in segment
+        assert "end" in segment
+```
+
+## Test Execution Strategy
+
+### Test Execution Order
+
+Tests will be developed and executed in this order:
+
+1. Domain model tests (simplest, most fundamental)
+2. Application service tests (builds on domain)
+3. Infrastructure tests (depends on domain and application)
+4. Integration tests (depends on all layers)
+5. Functional tests (end-to-end verification)
+
+### Continuous Integration
+
+Tests will be integrated into the CI pipeline with these stages:
+
+1. Fast tests (unit tests only)
+2. Full tests (all tests)
+3. Coverage reporting
+4. Linting and static analysis
+
+### Test Data Management
+
+Test data will be managed using these approaches:
+
+1. **Generated data**: Created during test execution
+2. **Fixtures**: Reusable test setup
+3. **Factory patterns**: Dynamic test data creation
+4. **Recorded API responses**: For external service tests
+
+## Test Coverage Goals
+
+The test suite will aim to achieve:
+
+- **90% overall code coverage**
+- **95% coverage for domain models**
+- **90% coverage for application services**
+- **85% coverage for infrastructure**
+
+Coverage will be measured using pytest-cov and reported in the CI pipeline.
+
+## Documentation and Maintenance
+
+### Test Documentation
+
+All tests will be documented with:
+
+1. Clear docstrings explaining test purpose
+2. Arrange-Act-Assert (AAA) pattern
+3. Comments for complex test logic
+
+### Test Maintenance
+
+To ensure maintainability:
+
+1. Keep tests focused on a single aspect
+2. Avoid test interdependencies
+3. Use descriptive failure messages
+4. Regularly refactor test code
+
+## Timeline
+
+| Week | Phase | Deliverables |
+|------|-------|--------------|
+| 1 | Framework Setup | Directory structure, core fixtures, test utilities |
+| 2 | Domain Tests | Tests for entities, value objects, business rules |
+| 3 | Application Services | Tests for orchestration, coordination, error handling |
+| 4 | Infrastructure | Repository tests, adapter tests, integration tests |
+
+## Success Criteria
+
+The test reimplementation will be considered successful when:
+
+1. Overall code coverage reaches the target of 90%
+2. All tests are properly organized and documented
+3. Tests run reliably and quickly
+4. No tests make actual API calls (everything properly mocked)
+5. The test suite provides valuable feedback for development
 
 ---
-Last updated: 2025-03-19
+
+*Last updated: 2023-03-21*
