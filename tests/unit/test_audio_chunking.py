@@ -117,37 +117,61 @@ class TestAudioChunkingService:
         mock_load.return_value = (np.zeros(16000), 16000)  # 1 second of silence at 16kHz
         mock_get_duration.return_value = 10.0  # 10 seconds
 
+        # Make mock_sf_write actually create files to test
+        def mock_write_file(path, data, sample_rate, **kwargs):
+            # Create the file with minimal content
+            path = Path(path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with open(path, "wb") as f:
+                f.write(b"RIFF\x00\x00\x00\x00WAVEfmt ")
+            return None
+
+        mock_sf_write.side_effect = mock_write_file
+
         # Mock the detect_silence method to avoid librosa calls
         with patch.object(AudioChunkingService, "detect_silence", return_value=[]) as mock_detect:
-            service = AudioChunkingService(config)
+            # Mock the size_aware_audio_converter to avoid actual conversion
+            with patch(
+                "pyhearingai.infrastructure.adapters.size_aware_audio_converter.SizeAwareFFmpegConverter"
+            ) as mock_converter_class:
+                mock_converter = MagicMock()
+                mock_converter_class.return_value = mock_converter
 
-            # Call the function
-            chunks = service.create_chunks(processing_job)
+                # Mock the size of the files to avoid size reduction
+                with patch("os.path.getsize") as mock_getsize:
+                    mock_getsize.return_value = 1024  # Small file size (1KB)
 
-            # Check that the chunks were created correctly
-            assert (
-                len(chunks) == 3
-            )  # Expect 3 chunks for 10 seconds with 5-second chunks and 1-second overlap
+                    service = AudioChunkingService(config)
 
-            # Check each chunk's properties
-            assert chunks[0].start_time == 0.0
-            assert chunks[0].end_time == 5.0
-            assert chunks[0].chunk_index == 0
+                    # Call the function
+                    chunks = service.create_chunks(processing_job)
 
-            assert chunks[1].start_time == 4.0  # 5.0 - 1.0 overlap
-            assert chunks[1].end_time == 9.0
-            assert chunks[1].chunk_index == 1
+                    # Check that the chunks were created correctly
+                    assert (
+                        len(chunks) == 3
+                    )  # Expect 3 chunks for 10 seconds with 5-second chunks and 1-second overlap
 
-            assert chunks[2].start_time == 8.0  # Updated from 5.0 to 8.0 to match implementation
-            assert chunks[2].end_time == 10.0
-            assert chunks[2].chunk_index == 2
+                    # Check each chunk's properties
+                    assert chunks[0].start_time == 0.0
+                    assert chunks[0].end_time == 5.0
+                    assert chunks[0].chunk_index == 0
 
-            # Check the job was updated
-            assert processing_job.total_chunks == 3
-            assert len(processing_job.chunks) == 3
+                    assert chunks[1].start_time == 4.0  # 5.0 - 1.0 overlap
+                    assert chunks[1].end_time == 9.0
+                    assert chunks[1].chunk_index == 1
 
-            # Verify the detect_silence was called
-            mock_detect.assert_called_once()
+                    assert (
+                        chunks[2].start_time == 8.0
+                    )  # Updated from 5.0 to 8.0 to match implementation
+                    assert chunks[2].end_time == 10.0
+                    assert chunks[2].chunk_index == 2
+
+                    # Check the job was updated
+                    assert processing_job.total_chunks == 3
+                    assert len(processing_job.chunks) == 3
+
+                    # Verify the detect_silence was called
+                    mock_detect.assert_called_once()
 
     def test_calculate_chunk_boundaries(self, config):
         """Test calculating chunk boundaries."""

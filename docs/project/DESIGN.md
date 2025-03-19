@@ -508,6 +508,178 @@ For implementation status and progress tracking, refer to [TODO.md](TODO.md).
 
 For detailed testing strategy and coverage improvement plan, refer to [TEST_PLAN.md](TEST_PLAN.md).
 
+## Job Management Features
+
+### Overview
+
+This document outlines the design for enhancing PyHearingAI's job management capabilities through the command-line interface (CLI). Specifically, it focuses on two new features:
+
+1. Job cancellation (`--cancel`)
+2. Job deletion (`--delete`)
+
+These features will give users more control over the processing jobs they create, allowing them to cancel in-progress jobs or completely remove jobs from the system.
+
+### Current Architecture
+
+The PyHearingAI CLI is built on the following components:
+
+- **Command-line Interface**: Using Python's `argparse` to define and parse command-line arguments.
+- **Job Repository**: The `JsonJobRepository` class handles job persistence, storing jobs as JSON files.
+- **Processing Job**: The `ProcessingJob` class represents a transcription job with status, audio path, and other properties.
+
+The CLI currently supports listing jobs and resuming jobs but doesn't allow canceling or deleting them.
+
+### Proposed Changes
+
+#### 1. CLI Argument Additions
+
+Add two new arguments to the command-line parser:
+
+```python
+input_group.add_argument("--cancel", type=str, help="Cancel the processing job with the specified ID")
+input_group.add_argument("--delete", type=str, help="Delete the processing job with the specified ID")
+```
+
+These arguments should be part of the mutually exclusive input group to ensure users specify only one operation per command.
+
+#### 2. Command Handlers
+
+Implement handlers for these commands in the `main()` function:
+
+```python
+# Handle cancel command
+if args.cancel:
+    job_id = args.cancel
+    job_repo = JsonJobRepository()
+    job = job_repo.get_by_id(job_id)
+
+    if not job:
+        print(f"Error: Job not found with ID: {job_id}", file=sys.stderr)
+        return 1
+
+    # Update job status to FAILED to indicate cancellation
+    job.status = ProcessingStatus.FAILED
+    job_repo.save(job)
+    print(f"Job canceled: {job_id}")
+    return 0
+
+# Handle delete command
+if args.delete:
+    job_id = args.delete
+    job_repo = JsonJobRepository()
+    job = job_repo.get_by_id(job_id)
+
+    if not job:
+        print(f"Error: Job not found with ID: {job_id}", file=sys.stderr)
+        return 1
+
+    # Delete the job
+    if job_repo.delete(job_id):
+        print(f"Job deleted: {job_id}")
+        return 0
+    else:
+        print(f"Error: Failed to delete job with ID: {job_id}", file=sys.stderr)
+        return 1
+```
+
+#### 3. Error Handling
+
+Both commands will follow a consistent pattern for error handling:
+- If the specified job ID doesn't exist, print an error message to stderr and return exit code 1
+- For the delete command, handle the case where deletion fails
+
+#### 4. Processing Impact
+
+**Cancellation**:
+- Updating a job's status to `FAILED` will prevent it from being processed further
+- The job will remain in the system and can be viewed in job listings
+- Users can still access any partial results that were generated before cancellation
+
+**Deletion**:
+- Completely removes the job from the system
+- Any related files (chunks, results) should also be cleaned up
+- This operation cannot be undone
+
+### Technical Details
+
+#### Repository Methods
+
+The implementation relies on these existing methods in `JsonJobRepository`:
+
+- `get_by_id(job_id)`: Retrieves a job by ID
+- `save(job)`: Saves a modified job
+- `delete(job_id)`: Deletes a job by ID
+
+#### ProcessingJob Class
+
+For cancellation, we modify the `status` attribute of the `ProcessingJob`:
+
+```python
+job.status = ProcessingStatus.FAILED
+```
+
+This status change is persisted by calling `job_repo.save(job)`.
+
+### User Experience
+
+#### Command Examples
+
+**Canceling a job**:
+```
+pyhearingai --cancel 12345abc-def6-789g-hijk-lmnopqrstuv
+```
+
+Output on success:
+```
+Job canceled: 12345abc-def6-789g-hijk-lmnopqrstuv
+```
+
+Output when job isn't found:
+```
+Error: Job not found with ID: 12345abc-def6-789g-hijk-lmnopqrstuv
+```
+
+**Deleting a job**:
+```
+pyhearingai --delete 12345abc-def6-789g-hijk-lmnopqrstuv
+```
+
+Output on success:
+```
+Job deleted: 12345abc-def6-789g-hijk-lmnopqrstuv
+```
+
+Output when job isn't found:
+```
+Error: Job not found with ID: 12345abc-def6-789g-hijk-lmnopqrstuv
+```
+
+Output when deletion fails:
+```
+Error: Failed to delete job with ID: 12345abc-def6-789g-hijk-lmnopqrstuv
+```
+
+### Testing Strategy
+
+Tests are already defined in `tests/test_cli.py` for both features. Once implemented, we can enable these tests by removing the `@pytest.mark.skip` decorators.
+
+The tests verify:
+- Successful cancellation
+- Cancellation of nonexistent jobs
+- Successful deletion
+- Deletion of nonexistent jobs
+- Failed deletion scenarios
+
+### Future Considerations
+
+1. **Clean-up on deletion**: Consider enhancing the `delete` method to clean up all associated files (chunks, audio, results)
+2. **Confirmation prompts**: For destructive operations like deletion, add an optional confirmation prompt
+3. **Wildcards for batch operations**: Support operations on multiple jobs matching criteria
+
+---
+
+Last updated: 2025-03-19
+
 ## Conclusion
 
 The PyHearingAI design follows clean architecture principles while addressing the unique challenges of audio processing at scale. The system prioritizes reliability, resumability, and user experience, all while maintaining a clear separation of concerns and adhering to solid software engineering principles.

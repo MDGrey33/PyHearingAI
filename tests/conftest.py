@@ -284,3 +284,27 @@ def pytest_configure(config):
 
 
 # Add any fixtures that should be available to all tests here
+
+
+# Function that can be imported directly by test modules
+def create_processing_job_func(audio_path="test_audio.wav", job_id=None, status=None):
+    """Create a processing job with minimal required parameters for tests."""
+    from pyhearingai.core.idempotent import ProcessingJob, ProcessingStatus
+
+    # Create a job with minimal required parameters
+    job = ProcessingJob(original_audio_path=audio_path, id=job_id)
+
+    # Set status after creation if provided
+    if status is not None:
+        job.status = status
+
+    return job
+
+
+@pytest.fixture
+def create_processing_job():
+    """Fixture to create a processing job with minimal required parameters for tests."""
+    return create_processing_job_func
+
+
+# Add any fixtures that should be available to all tests here

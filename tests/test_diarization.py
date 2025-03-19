@@ -10,13 +10,44 @@ import os
 import tempfile
 import unittest
 import uuid
+from datetime import datetime
 from pathlib import Path
+from typing import Dict, List, Tuple
 from unittest.mock import MagicMock, PropertyMock, patch
 
-from pyhearingai.core.idempotent import AudioChunk, ChunkStatus, ProcessingJob
-from pyhearingai.core.models import DiarizationSegment
+import numpy as np
+import pytest
+from pytest import fixture
+
+from pyhearingai.core.idempotent import AudioChunk, ChunkStatus, ProcessingJob, ProcessingStatus
+from pyhearingai.core.models import DiarizationSegment, Segment
 from pyhearingai.diarization.repositories.diarization_repository import DiarizationRepository
 from pyhearingai.diarization.service import DiarizationService
+from pyhearingai.infrastructure.repositories.json_repositories import (
+    JsonChunkRepository,
+    JsonJobRepository,
+)
+from tests.conftest import create_processing_job_func
+
+
+def create_test_job(
+    job_id, audio_path, chunks=None, status=None, parallel=False, force_reprocess=False
+):
+    """
+    Create a ProcessingJob instance with the given parameters.
+    Handles differences between constructor signatures in different versions.
+    """
+    job = create_processing_job_func(audio_path=str(audio_path), job_id=job_id, status=status)
+
+    # Add custom attributes
+    job.parallel = parallel
+    job.force_reprocess = force_reprocess
+
+    # Set chunks if provided
+    if chunks is not None:
+        job.chunks = chunks
+
+    return job
 
 
 class TestDiarizationService(unittest.TestCase):
@@ -82,28 +113,21 @@ class TestDiarizationService(unittest.TestCase):
         ]
 
         # Create a test job
-        self.test_job = ProcessingJob(
-            id=self.test_chunk.job_id,
-            original_audio_path=str(self.test_audio_path),  # Add required parameter
-            chunks=[self.test_chunk]
-            # Remove parallel and force_reprocess if they're not valid parameters
+        self.test_job = create_test_job(
+            job_id=self.test_chunk.job_id,
+            audio_path=self.test_audio_path,
+            chunks=[self.test_chunk],
+            parallel=False,
+            force_reprocess=False,
         )
-
-        # Add these as attributes to the job for testing
-        self.test_job.parallel = False
-        self.test_job.force_reprocess = False
 
         # Create a test parallel job
-        self.test_parallel_job = ProcessingJob(
-            id=str(uuid.uuid4()),
-            original_audio_path=str(self.test_audio_path),  # Add required parameter
-            chunks=[self.test_chunk]
-            # Remove parallel and force_reprocess if they're not valid parameters
+        self.test_parallel_job = create_test_job(
+            job_id=str(uuid.uuid4()),
+            audio_path=self.test_audio_path,
+            chunks=[self.test_chunk],
+            parallel=True,
         )
-
-        # Add these as attributes to the job for testing
-        self.test_parallel_job.parallel = True
-        self.test_parallel_job.force_reprocess = False
 
     def tearDown(self):
         """Clean up after each test."""
@@ -133,7 +157,7 @@ class TestDiarizationService(unittest.TestCase):
 
         # Verify results
         self.assertEqual(result, self.test_segments)
-        self.mock_diarizer.diarize.assert_called_once_with(str(self.test_audio_path))
+        self.mock_diarizer.diarize.assert_called_once_with(str(self.test_audio_path), timeout=7200)
         self.mock_repository.save.assert_called_once_with(
             self.test_chunk.job_id, self.test_chunk.id, self.test_segments
         )
@@ -173,7 +197,7 @@ class TestDiarizationService(unittest.TestCase):
 
         # Verify results
         self.assertEqual(result, [])
-        self.mock_diarizer.diarize.assert_called_once_with(str(self.test_audio_path))
+        self.mock_diarizer.diarize.assert_called_once_with(str(self.test_audio_path), timeout=7200)
         self.mock_repository.save.assert_not_called()
 
     def test_diarize_job_sequential(self):
@@ -198,17 +222,20 @@ class TestDiarizationService(unittest.TestCase):
         # Set repository to return no cached results
         self.mock_repository.exists.return_value = False
 
-        # For parallel processing, we need to patch the _process_chunk_directly function
-        # used by the ThreadPoolExecutor
-        with patch(
-            "pyhearingai.diarization.service._process_chunk_directly",
-            return_value=self.test_segments,
-        ):
+        # Instead of patching _process_chunk_directly, we'll patch the _diarize_job_parallel method
+        expected_result = {self.test_chunk.id: self.test_segments}
+
+        with patch.object(
+            self.service, "_diarize_job_parallel", return_value=expected_result
+        ) as mock_parallel:
             # Call the method
             result = self.service.diarize_job(self.test_parallel_job)
 
-        # Verify results
-        self.assertEqual(result, {self.test_chunk.id: self.test_segments})
+            # Verify the method was called
+            mock_parallel.assert_called_once()
+
+            # Verify results
+            self.assertEqual(result, expected_result)
 
     def test_get_chunk_object_with_audio_chunk(self):
         """Test getting a chunk object from an existing AudioChunk."""

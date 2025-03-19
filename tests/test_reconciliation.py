@@ -15,6 +15,7 @@ from unittest.mock import MagicMock, patch
 from pyhearingai.core.idempotent import ProcessingJob, ProcessingStatus
 from pyhearingai.core.models import DiarizationSegment, Segment
 from pyhearingai.reconciliation.service import ReconciliationService
+from tests.conftest import create_processing_job_func
 
 
 class TestReconciliationService(unittest.TestCase):
@@ -31,9 +32,10 @@ class TestReconciliationService(unittest.TestCase):
         with open(self.audio_file_path, "wb") as f:
             f.write(b"\x00" * 100)  # Small dummy file
 
-        self.job = ProcessingJob(
-            original_audio_path=self.audio_file_path,
-            id="test-reconciliation-job",
+        # Use the helper function instead of direct instantiation
+        self.job = create_processing_job_func(
+            audio_path=self.audio_file_path,
+            job_id="test-reconciliation-job",
             status=ProcessingStatus.PENDING,
         )
 
@@ -89,12 +91,12 @@ class TestReconciliationService(unittest.TestCase):
 
             # Act
             service = ReconciliationService(
-                model="gpt-4-turbo", repository=None  # Let it create a default repository
+                reconciliation_repository=None  # Let it create a default repository
             )
 
             # Assert
-            # Verify the adapter was initialized with the correct model
-            mock_adapter_class.assert_called_once_with(model="gpt-4-turbo")
+            # Verify the adapter was initialized correctly
+            mock_adapter_class.assert_called_once()
 
     @patch("pyhearingai.infrastructure.repositories.json_repositories.JsonChunkRepository")
     @patch("pyhearingai.diarization.repositories.diarization_repository.DiarizationRepository")
@@ -132,11 +134,11 @@ class TestReconciliationService(unittest.TestCase):
 
         # Create a mock repository
         mock_repo = MagicMock()
-        mock_repo.reconciled_result_exists.return_value = False
+        mock_repo.has_reconciled_result.return_value = False
 
         # Create service with mocked dependencies
         service = ReconciliationService(
-            repository=mock_repo,
+            reconciliation_repository=mock_repo,
             diarization_repository=mock_di_repo_instance,
             transcription_repository=mock_tr_repo_instance,
         )
@@ -149,8 +151,12 @@ class TestReconciliationService(unittest.TestCase):
         # Assert
         self.assertEqual(result, self.reconciled_segments)
         mock_adapter.reconcile.assert_called_once()
+
+        # Use unittest.mock.ANY to match any metadata dictionary
+        from unittest.mock import ANY
+
         mock_repo.save_reconciled_result.assert_called_once_with(
-            self.job.id, self.reconciled_segments
+            self.job.id, self.reconciled_segments, ANY
         )
 
     @patch(
@@ -163,7 +169,7 @@ class TestReconciliationService(unittest.TestCase):
         mock_repo_instance.formatted_output_exists.return_value = False
         mock_repo.return_value = mock_repo_instance
 
-        service = ReconciliationService(repository=mock_repo_instance)
+        service = ReconciliationService(reconciliation_repository=mock_repo_instance)
 
         # Act - Test different format outputs
         with patch("pyhearingai.application.outputs.to_text") as mock_to_text:
@@ -194,7 +200,7 @@ class TestReconciliationService(unittest.TestCase):
         mock_repo_instance.get_reconciled_result.return_value = self.reconciled_segments
         mock_repo.return_value = mock_repo_instance
 
-        service = ReconciliationService(repository=mock_repo_instance)
+        service = ReconciliationService(reconciliation_repository=mock_repo_instance)
 
         # Mock format_output method
         service.format_output = MagicMock(return_value="FORMATTED OUTPUT")

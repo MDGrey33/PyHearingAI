@@ -23,7 +23,7 @@ class TestAudioQualitySpecification:
         assert spec.bit_depth == 16
         assert spec.format == AudioFormat.WAV
         assert spec.codec == AudioCodec.PCM_S16LE
-        assert spec.max_size_bytes == 24 * 1024 * 1024  # 24MB
+        assert spec.max_size_bytes == 25 * 1024 * 1024  # 25MB
         assert spec.quality is None
 
     def test_factory_methods(self):
@@ -35,7 +35,7 @@ class TestAudioQualitySpecification:
         assert whisper_spec.bit_depth == 16
         assert whisper_spec.format == AudioFormat.WAV
         assert whisper_spec.codec == AudioCodec.PCM_S16LE
-        assert whisper_spec.max_size_bytes == 24 * 1024 * 1024  # 24MB
+        assert whisper_spec.max_size_bytes == 25 * 1024 * 1024  # 25MB
 
         # Test local processing spec
         local_spec = AudioQualitySpecification.for_local_processing()

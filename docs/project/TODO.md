@@ -1,5 +1,97 @@
 # PyHearingAI TODO List
 
+This document outlines the specific tasks needed to improve PyHearingAI's job management capabilities and fix issues in the test suite.
+
+## Job Management Features
+
+### CLI Enhancements
+
+- [ ] Add `--cancel` option to CLI argument parser
+  - Location: `src/pyhearingai/cli.py`
+  - Task: Add to the mutually exclusive input group
+  - Code: `input_group.add_argument("--cancel", type=str, help="Cancel the processing job with the specified ID")`
+
+- [ ] Add `--delete` option to CLI argument parser
+  - Location: `src/pyhearingai/cli.py`
+  - Task: Add to the mutually exclusive input group
+  - Code: `input_group.add_argument("--delete", type=str, help="Delete the processing job with the specified ID")`
+
+- [ ] Implement cancel handler in main function
+  - Location: `src/pyhearingai/cli.py`
+  - Task: Add handler after argument parsing, before the resume handling
+  - Code: See implementation in DESIGN.md
+
+- [ ] Implement delete handler in main function
+  - Location: `src/pyhearingai/cli.py`
+  - Task: Add handler after argument parsing, before the resume handling
+  - Code: See implementation in DESIGN.md
+
+- [ ] Enable CLI cancel/delete tests
+  - Location: `tests/test_cli.py`
+  - Task: Remove `@pytest.mark.skip` decorators from:
+    - `test_cancel_job`
+    - `test_cancel_nonexistent_job`
+    - `test_delete_job`
+    - `test_delete_nonexistent_job`
+    - `test_delete_job_failure`
+
+### ProcessingJob Class Fixes
+
+- [ ] Fix constructor parameter handling in ProcessingJob
+  - Location: `src/pyhearingai/core/idempotent.py`
+  - Task: Update the constructor to properly handle status, output_path, and processing_options parameters
+  - Code: Modify the `__init__` method to accept and store these parameters
+
+- [ ] Add processing_options attribute to ProcessingJob
+  - Location: `src/pyhearingai/core/idempotent.py`
+  - Task: Add attribute and update related methods
+  - Code: Add as instance variable and update from_dict/to_dict methods to handle serialization
+
+- [ ] Enable repository serialization test
+  - Location: `tests/test_repositories.py`
+  - Task: Remove `@pytest.mark.skip` decorator from `test_serialization_edge_cases`
+
+### Test Fixes
+
+- [ ] Update all tests to properly initialize ProcessingJob objects
+  - Task: Review all test files that create ProcessingJob instances and ensure they:
+    1. Use the constructor without unsupported parameters
+    2. Set attributes after initialization
+  - Files to check:
+    - `tests/test_reconciliation_integration.py`
+    - `tests/test_transcription.py`
+    - `tests/test_transcription_integration.py`
+    - `tests/test_progress.py`
+    - `tests/test_orchestrator.py`
+
+## Codebase Health Improvements
+
+- [ ] Improve test coverage
+  - Task: Identify areas with low coverage and add tests
+  - Target: Increase coverage from 28.59% towards the required 89.5%
+
+- [ ] Fix pyannote batch_size parameter error
+  - Location: `src/pyhearingai/infrastructure/diarizers/pyannote.py`
+  - Task: Update diarization code to handle batch_size parameter correctly
+
+- [ ] Fix abstract method missing error in MockWhisperOpenAITranscriber
+  - Task: Implement the missing close() method in the mock class used in tests
+
+## Documentation
+
+- [x] Create TEST_PLAN.md
+  - Task: Document test status and future improvements
+
+- [x] Create DESIGN.md
+  - Task: Document design for job management features
+
+- [x] Create TODO.md
+  - Task: Outline specific implementation tasks
+
+---
+
+Last updated: 2025-03-19
+
 ## Test Commands
 
 Use these commands to test the audio processing functionality:

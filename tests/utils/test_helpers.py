@@ -64,8 +64,12 @@ class TestFixtures:
         job = ProcessingJob(
             id=job_id,
             original_audio_path=audio_path,
-            status=ProcessingStatus.PENDING,  # Use the enum instead of string
+            chunk_duration=5.0,  # Set a positive chunk duration
+            overlap_duration=1.0,  # Set a reasonable overlap
         )
+
+        # Status is already set to PENDING in the constructor
+        # No need to explicitly set it here
 
         return job
 
