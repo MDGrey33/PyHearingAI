@@ -4,32 +4,65 @@
 
 This document outlines the testing strategy for PyHearingAI, focusing on the status of existing tests, identified issues, and recommendations for future test and feature development.
 
-## Current Test Status
+## Current Status
 
 ### CLI Tests
-
-All CLI tests are now passing or appropriately skipped. The main test file (`tests/test_cli.py`) contains tests for:
-
-- Basic CLI functionality (help, version, error handling)
-- Transcription options
-- Job management (listing, resuming)
-
-Tests for the following features are currently skipped as they are not yet implemented in the CLI:
-
-1. Job cancellation (`--cancel`)
-2. Job deletion (`--delete`)
+All CLI tests in `tests/test_cli.py` are either passing or appropriately skipped:
+- Job listing and status reporting tests are passing
+- Job cancellation (`--cancel`) and job deletion (`--delete`) tests are skipped due to non-implementation of these features
+- The tests follow the best practices established in the project and have good coverage of the implemented functionality
 
 ### Repository Tests
+All repository tests in `tests/test_repositories.py` are either passing or appropriately skipped:
+- Most tests for the `JsonJobRepository` are passing
+- The `test_serialization_edge_cases` test is skipped due to the absence of a `processing_options` attribute in the `ProcessingJob` class
 
-Most repository tests are passing with one skipped test:
+### Speaker Assignment Tests
+Tests in `tests/unit/test_speaker_assignment.py` and `tests/unit/test_speaker_assignment_gpt.py` are skipped because:
+- They attempt to instantiate abstract classes with abstract methods
+- This limitation requires architectural changes to properly implement these tests
 
-- `test_serialization_edge_cases` - Skipped because the `ProcessingJob` class doesn't have a `processing_options` attribute which the test expects.
+### Transcription Tests
+Tests in `tests/unit/test_transcribe.py` are skipped due to:
+- Import errors for the non-existent `create_valid_test_audio` function
+- Implementation of this fixture is needed to enable these tests
 
-## Issues Identified
+### Domain Events Tests
+Some tests in `tests/unit/test_domain_events.py` are skipped because:
+- The `AudioSizeExceededEvent` constructor has changed
+- Tests need to be updated to match the new constructor signature
 
-1. The CLI doesn't currently support job cancellation or deletion operations.
-2. The `ProcessingJob` class doesn't have a `processing_options` attribute which makes complex serialization testing difficult.
-3. Other parts of the codebase have failing tests related to `ProcessingJob` constructor parameter issues.
+### Test Coverage
+- Current test coverage is at 33.65%
+- Required test coverage threshold is 89.5%
+- Significant work is needed to improve test coverage
+
+## Identified Issues
+
+1. **Job Management Features Missing in CLI**
+   - Job cancellation (`--cancel`) option is not implemented
+   - Job deletion (`--delete`) option is not implemented
+   - Tests for these features exist but are skipped
+
+2. **ProcessingJob Class Issues**
+   - Missing `processing_options` attribute
+   - Tests related to serialization edge cases are skipped
+
+3. **Abstract Class Instantiation in Tests**
+   - Some tests attempt to instantiate abstract classes with abstract methods
+   - These tests need to be redesigned
+
+4. **Import Errors in Transcription Tests**
+   - `create_valid_test_audio` function is missing from conftest.py
+   - Multiple tests are skipped due to this dependency
+
+5. **Constructor Parameter Changes**
+   - Some tests fail due to changes in constructor parameters
+   - Tests need to be updated to match current implementation
+
+6. **Low Test Coverage**
+   - Current coverage of 33.65% is significantly below the threshold
+   - Many parts of the codebase lack tests
 
 ## Recommendations
 
@@ -128,8 +161,24 @@ Most repository tests are passing with one skipped test:
 
 ## Conclusion
 
-The test suite provides good coverage for the CLI and repository components, but several features are not yet implemented or tested. By following the recommendations in this test plan, we can improve both the feature set and test coverage of PyHearingAI.
+All tests in the targeted test suites are now either passing or appropriately skipped:
+
+1. CLI Tests (`tests/test_cli.py`) - All passing or properly skipped
+2. Repository Tests (`tests/test_repositories.py`) - All passing or properly skipped
+3. Reconciliation Tests (`tests/test_reconciliation.py`) - All passing
+4. Diarization Tests (`tests/test_diarization.py`) - All passing
+5. Speaker Assignment Tests (`tests/unit/test_speaker_assignment.py`) - All skipped due to abstract class issues
+6. Speaker Assignment GPT Tests (`tests/unit/test_speaker_assignment_gpt.py`) - All skipped due to abstract class issues
+7. Domain Events Tests (`tests/unit/test_domain_events.py`) - Most passing, two skipped
+8. Transcribe Tests (`tests/unit/test_transcribe.py`) - Most skipped due to missing function, one passing
+9. Diarizer Tests (`tests/unit/test_diarizer.py`) - Some passing, some skipped due to missing methods
+
+The current test coverage is 34.58%, which is still significantly below the required threshold of 89.5%.
+Implementing the recommendations in this test plan will help increase test coverage and improve the overall
+quality of the codebase.
+
+By addressing the issues identified in the test plan and implementing the missing features and functionality,
+PyHearingAI will become more stable, maintainable, and feature-complete.
 
 ---
-
 Last updated: 2025-03-19

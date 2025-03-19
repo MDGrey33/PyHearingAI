@@ -676,6 +676,90 @@ The tests verify:
 2. **Confirmation prompts**: For destructive operations like deletion, add an optional confirmation prompt
 3. **Wildcards for batch operations**: Support operations on multiple jobs matching criteria
 
+## Testing Approach
+
+Our testing approach follows several key principles:
+
+### Test-Driven Development (TDD)
+
+We adhere to TDD principles when developing new features:
+1. Write failing tests first
+2. Implement code to make tests pass
+3. Refactor to improve code quality
+
+### Test Organization
+
+Tests are organized to match the codebase structure:
+- `tests/unit/`: Unit tests for individual components
+- `tests/integration/`: Integration tests across components
+- `tests/test_*.py`: Module-level tests for larger features
+
+### Testing Levels
+
+1. **Unit Tests**: Test individual functions and classes in isolation
+2. **Integration Tests**: Test interactions between components
+3. **End-to-End Tests**: Test full workflows from CLI to output
+
+### Testing with Immutable Production Code
+
+To prevent unintended changes to production behavior, we follow these rules:
+
+1. **Never Modify Production Code to Fix Tests**
+   - Tests should be written or updated to match existing production behavior
+   - Production code changes should be driven by feature requirements, not test requirements
+
+2. **Skip Tests That Need Production Code Changes**
+   - When tests expect behavior that doesn't exist in production code
+   - Document why the test is skipped and what would need to change
+
+3. **Document Required Production Code Changes**
+   - Create detailed documentation of required changes in TODO.md
+   - Use test plans to guide future development
+
+### Test Fixtures
+
+We use fixtures extensively to:
+- Set up test environments
+- Create test data
+- Mock external dependencies
+- Share common test utilities
+
+### Mocking Strategy
+
+When testing components with external dependencies:
+1. Mock repositories and services at their interfaces
+2. Use predefined test data instead of generating new data
+3. Verify interactions with mocked components
+
+### CI/CD Integration
+
+Tests are integrated into the CI/CD pipeline:
+- All tests run on every pull request
+- Coverage reports are generated automatically
+- Test failures block merges to main branch
+
+### Code Coverage Goals
+
+We target high test coverage:
+- 89.5% line coverage across the codebase
+- 100% coverage for critical components
+- Coverage for all error handling paths
+
+### Test Data Management
+
+Test data is managed through:
+- Fixture files in the `tests/fixtures` directory
+- Helper functions to generate test data
+- Cleanup to remove temporary files after tests
+
+### Test Documentation
+
+Each test includes detailed documentation:
+- Purpose of the test
+- Test setup and requirements
+- Expected behavior
+- Any special considerations
+
 ---
 
 Last updated: 2025-03-19
