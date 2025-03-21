@@ -666,3 +666,51 @@ transcribe "test data/long_conversatio.m4a" --start-time 0 --end-time 300 --batc
 - Test repository implementations
 - Test external service adapters
 - Test serialization/deserialization
+
+# Project TODO: Test Suite Implementation
+
+## Current Status
+- ✅ Created comprehensive test directory structure
+- ✅ Set up fixtures for audio generation
+- ✅ Added `conftest.py` with global fixtures
+- ✅ Created test resource directory with README
+- ✅ Implemented test files for various components but they have mismatches with actual implementation
+
+## High-Priority Issues
+
+### Import and API Mismatches
+- [ ] Fix imports in test files to match actual project structure
+- [ ] Update tests for `ApiSizeLimit` to match actual implementation parameters
+- [ ] Correct test expectations for `AudioFormatService` (use concrete implementation)
+- [ ] Update `ChunkingService` tests to match actual implementation
+- [ ] Fix method signatures in test files to match implementation
+
+### Test Implementation
+- [ ] Update all tests with skip markers to properly implement them
+- [ ] Create mock implementations where needed for unit tests
+- [ ] Ensure test fixtures work with all tests
+
+### Phase 1: Fix Critical Test Infrastructure (Current Phase)
+- [ ] Create proper mock implementations for abstract interfaces
+- [ ] Fix test fixture paths and imports
+- [ ] Ensure at least one test passes in each test file
+
+### Phase 2: Implement Unit Tests
+- [ ] Complete unit tests for domain models
+- [ ] Add unit tests for services and repositories
+- [ ] Test edge cases and error conditions
+
+### Phase 3: Implement Integration Tests
+- [ ] Test service interactions
+- [ ] Verify workflow orchestration
+- [ ] Test with mock providers
+
+### Phase 4: Implement Functional Tests
+- [ ] Test CLI functionality
+- [ ] Verify end-to-end workflows
+- [ ] Test with various input formats
+
+## Test Coverage Goals
+- [ ] Ensure overall test coverage reaches 89.5% (current: 0%)
+- [ ] Prioritize coverage of core domain models
+- [ ] Cover key user-facing functionality

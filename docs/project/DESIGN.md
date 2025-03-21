@@ -769,3 +769,206 @@ Last updated: 2025-03-19
 The PyHearingAI design follows clean architecture principles while addressing the unique challenges of audio processing at scale. The system prioritizes reliability, resumability, and user experience, all while maintaining a clear separation of concerns and adhering to solid software engineering principles.
 
 The architecture enables processing of arbitrarily large audio files with constant memory usage, parallellization for performance, and robust error handling for reliability.
+
+# PyHearingAI Test Architecture and Design
+
+## Clean Architecture Testing Approach
+
+The PyHearingAI test suite is designed following clean architecture principles to ensure that tests properly respect dependency rules and effectively validate each layer of the application.
+
+### Core Design Principles
+
+1. **Layer Independence**: Each layer is tested independently, with dependencies mocked or stubbed.
+2. **Domain-Driven Design**: Tests are organized around domain concepts and bounded contexts.
+3. **Port and Adapter Testing**: Interfaces (ports) are tested separately from their implementations (adapters).
+4. **Test Isolation**: Tests do not depend on each other or on external services unless explicitly testing integration.
+
+## Test Directory Structure
+
+The test suite is organized in a hierarchical structure that mirrors the clean architecture layers:
+
+```
+tests/
+├── conftest.py                 # Global fixtures and configuration
+├── fixtures/                   # Shared test fixtures
+│   ├── __init__.py
+│   ├── audio_fixtures.py       # Audio generation fixtures
+│   └── resources/              # Test resource files
+│       └── README.md           # Documentation for resources
+├── unit/                       # Unit tests
+│   ├── __init__.py
+│   ├── domain/                 # Domain layer tests
+│   │   ├── __init__.py
+│   │   └── test_api_size_limit_policy.py
+│   ├── application/            # Application layer tests
+│   │   └── __init__.py
+│   └── infrastructure/         # Infrastructure layer tests
+│       └── __init__.py
+├── integration/                # Integration tests
+│   ├── __init__.py
+│   └── test_transcription_workflow.py
+└── functional/                 # Functional tests
+    ├── __init__.py
+    └── test_cli.py
+```
+
+## Fixture Design
+
+Fixtures are designed to be:
+
+1. **Reusable**: Available across multiple test modules
+2. **Configurable**: Adaptable to different test scenarios
+3. **Isolated**: Creating and cleaning up their resources
+4. **Fast**: Optimized for quick test execution
+
+### Key Fixtures
+
+#### Audio Generation
+
+```python
+@pytest.fixture
+def create_test_audio(tmp_path):
+    """Generate test audio with configurable parameters."""
+    def _create_test_audio(duration=1.0, sample_rate=16000, channels=1,
+                           freq=440, silence_start=None, silence_duration=None):
+        # Implementation details...
+        return audio_path
+    return _create_test_audio
+```
+
+#### Multi-speaker Audio
+
+```python
+@pytest.fixture
+def create_multi_speaker_audio(tmp_path):
+    """Generate test audio with multiple speakers and configurable segments."""
+    def _create_multi_speaker_audio(duration=3.0, num_speakers=2, speech_segments=None):
+        # Implementation details...
+        return audio_path
+    return _create_multi_speaker_audio
+```
+
+## Mock Design
+
+For clean architecture testing, we implement several mock classes:
+
+### Mock Service Implementations
+
+```python
+class MockAudioFormatService(AudioFormatService):
+    """Mock implementation of AudioFormatService for testing."""
+
+    def get_audio_metadata(self, audio_path):
+        # Return predefined metadata
+
+    def extract_audio_segment(self, audio_path, output_path, start_time, end_time, quality_spec=None):
+        # Create a simple segment file
+
+    # Other required methods...
+```
+
+### Mock Repositories
+
+```python
+class MockTranscriptionRepository(TranscriptionRepository):
+    """Mock implementation of TranscriptionRepository for testing."""
+
+    def __init__(self):
+        self.stored_transcriptions = {}
+
+    def save(self, transcription):
+        self.stored_transcriptions[transcription.id] = transcription
+
+    def get(self, transcription_id):
+        return self.stored_transcriptions.get(transcription_id)
+```
+
+## Unit Testing Strategy
+
+Unit tests focus on isolated components:
+
+1. **Domain Layer**: Test business rules without dependencies
+2. **Application Services**: Test with mocked dependencies
+3. **Infrastructure Adapters**: Test concrete implementations with minimal external dependencies
+
+Example:
+
+```python
+def test_api_size_limit_policy():
+    # Test domain service in isolation
+    policy = ApiSizeLimitPolicy()
+    limit = policy.get_limit_for_provider(ApiProvider.OPENAI_WHISPER)
+
+    assert limit.provider == ApiProvider.OPENAI_WHISPER
+    assert limit.max_file_size_bytes == 25 * 1024 * 1024  # 25MB
+```
+
+## Integration Testing Strategy
+
+Integration tests verify component interactions:
+
+1. **Service Composition**: Test multiple services working together
+2. **Repository Integration**: Test services with actual repositories
+3. **Workflow Testing**: Test complete workflows through the application layer
+
+Example:
+
+```python
+def test_transcription_workflow(audio_file, mock_transcription_provider):
+    # Test the full transcription workflow with mocked providers
+    workflow = TranscriptionWorkflow(
+        chunking_service=ChunkingServiceImpl(),
+        transcription_service=TranscriptionServiceImpl(
+            provider=mock_transcription_provider
+        )
+    )
+
+    result = workflow.process(audio_file)
+    assert result.status == "completed"
+    assert len(result.segments) > 0
+```
+
+## Functional Testing Strategy
+
+Functional tests verify user-facing functionality:
+
+1. **CLI Testing**: Test command-line interface
+2. **End-to-End Flows**: Test complete user workflows
+3. **Error Handling**: Test user-facing error messages
+
+Example:
+
+```python
+def test_transcribe_command(cli_runner, test_audio_file):
+    # Test the CLI transcribe command
+    result = cli_runner.invoke(['transcribe', str(test_audio_file), '--format', 'txt'])
+
+    assert result.exit_code == 0
+    assert "Transcription completed" in result.output
+    assert Path(f"{test_audio_file.stem}.txt").exists()
+```
+
+## Testing External Dependencies
+
+For external dependencies like FFmpeg and API services:
+
+1. **Abstraction**: Access through interfaces that can be mocked
+2. **Controlled Environment**: Use containers or fixed versions for reproducibility
+3. **Conditional Tests**: Skip or mark tests requiring external services
+
+## Test Data Management
+
+Test data strategy:
+
+1. **Generated Data**: Create synthetic audio for most tests
+2. **Fixed Samples**: Use small, version-controlled samples for specific scenarios
+3. **Test Resources**: Store in `tests/fixtures/resources/` directory
+4. **Cleanup**: Ensure tests clean up after themselves using fixtures
+
+## Continuous Integration Considerations
+
+CI-specific design:
+
+1. **Skip Heavy Tests**: Mark tests that require significant resources
+2. **Environment Variables**: Configure test behavior based on environment
+3. **Parallelization**: Design tests to run in parallel safely

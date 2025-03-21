@@ -1,33 +1,122 @@
 """
-PyHearingAI test configuration.
+Root conftest.py for PyHearingAI tests.
 
-This module contains pytest configuration for PyHearingAI tests.
+This module sets up global fixtures and configuration for all tests, ensuring a consistent
+test environment and behavior.
 """
 
 import os
-import shutil
+import sys
 import tempfile
+import uuid
+from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
-import soundfile as sf
 
-# Import our test helpers
-from tests.helpers import (
-    assert_segment_lists_equal,
-    assert_segments_equal,
-    create_segment,
-    create_segment_list,
-    create_temp_audio_file,
-    create_temp_dir,
-    mock_openai_client,
-    mock_pyannote_pipeline,
-)
+# Add project root to path to ensure imports work correctly
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Constants for tests
+TEST_RESOURCE_DIR = Path(__file__).parent / "fixtures" / "resources"
 
 
-# Path fixtures
+@pytest.fixture(scope="session")
+def test_resource_dir():
+    """Return the path to the test resources directory."""
+    return TEST_RESOURCE_DIR
+
+
+@pytest.fixture
+def temp_dir():
+    """Provide a temporary directory that's cleaned up after the test."""
+    tmp_dir = tempfile.mkdtemp()
+    yield Path(tmp_dir)
+    # Cleanup temp files/directories
+    import shutil
+
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+@pytest.fixture
+def reset_logging():
+    """Reset logging configuration before and after each test."""
+    import logging
+
+    # Store original logging config
+    original_loggers = {}
+    for logger_name in logging.root.manager.loggerDict:
+        logger = logging.getLogger(logger_name)
+        original_loggers[logger_name] = {
+            "level": logger.level,
+            "handlers": logger.handlers.copy(),
+            "disabled": logger.disabled,
+            "propagate": logger.propagate,
+        }
+
+    # Store root logger config
+    root_logger = logging.getLogger()
+    original_root_logger = {
+        "level": root_logger.level,
+        "handlers": root_logger.handlers.copy(),
+        "disabled": root_logger.disabled,
+    }
+
+    # Reset for test
+    yield
+
+    # Restore original logging config
+    for logger_name, config in original_loggers.items():
+        logger = logging.getLogger(logger_name)
+        logger.level = config["level"]
+        logger.handlers = config["handlers"]
+        logger.disabled = config["disabled"]
+        logger.propagate = config["propagate"]
+
+    # Restore root logger
+    root_logger = logging.getLogger()
+    root_logger.level = original_root_logger["level"]
+    root_logger.handlers = original_root_logger["handlers"]
+    root_logger.disabled = original_root_logger["disabled"]
+
+
+@pytest.fixture
+def mock_environment():
+    """Mock environment variables needed for tests and restore original values afterward."""
+    import os
+
+    # Store original environment values
+    original_env = {}
+    test_env_vars = [
+        "OPENAI_API_KEY",
+        "ASSEMBLYAI_API_KEY",
+        "DEEPGRAM_API_KEY",
+        "WHISPERAPI_API_KEY",
+        "PYHEARING_LOG_LEVEL",
+        "PYHEARING_CONFIG_PATH",
+    ]
+
+    for var in test_env_vars:
+        original_env[var] = os.environ.get(var)
+
+    # Set test values
+    os.environ["OPENAI_API_KEY"] = "test-openai-key"
+    os.environ["ASSEMBLYAI_API_KEY"] = "test-assemblyai-key"
+    os.environ["DEEPGRAM_API_KEY"] = "test-deepgram-key"
+    os.environ["WHISPERAPI_API_KEY"] = "test-whisperapi-key"
+    os.environ["PYHEARING_LOG_LEVEL"] = "DEBUG"
+
+    yield
+
+    # Restore original values
+    for var, value in original_env.items():
+        if value is None:
+            if var in os.environ:
+                del os.environ[var]
+        else:
+            os.environ[var] = value
+
+
 @pytest.fixture(scope="session")
 def fixtures_dir():
     """Return the path to the fixtures directory."""
@@ -37,22 +126,20 @@ def fixtures_dir():
 @pytest.fixture(scope="session")
 def example_audio_path(fixtures_dir):
     """Return the path to the example audio file."""
-    return fixtures_dir / "example_audio.m4a"
+    return fixtures_dir / "resources" / "example_audio.m4a"
 
 
 @pytest.fixture(scope="session")
 def reference_transcript_path(fixtures_dir):
     """Return the path to the reference transcript file."""
-    return fixtures_dir / "labeled_transcript.txt"
+    return fixtures_dir / "resources" / "labeled_transcript.txt"
 
 
-# Environment fixtures
-@pytest.fixture
-def temp_dir():
-    """Create a temporary directory for tests."""
-    temp_dir = tempfile.mkdtemp()
-    yield Path(temp_dir)
-    shutil.rmtree(temp_dir)
+def create_temp_audio_file(suffix=".wav"):
+    """Helper function to create a temporary audio file."""
+    fd, path = tempfile.mkstemp(suffix=suffix)
+    file_handle = os.fdopen(fd, "wb")
+    return Path(path), file_handle
 
 
 @pytest.fixture
@@ -74,7 +161,17 @@ def temp_audio_file():
         path.unlink()
 
 
-# Domain model fixtures
+def create_segment(start, end, text, speaker_id=None):
+    """Helper function to create a transcript segment."""
+    try:
+        from pyhearingai.core.models import Segment
+
+        return Segment(text=text, start=start, end=end, speaker=speaker_id)
+    except ImportError:
+        # Simple dict-based fallback if the module is not available
+        return {"text": text, "start": start, "end": end, "speaker": speaker_id}
+
+
 @pytest.fixture
 def transcript_segments():
     """Return a list of transcript segments for testing."""
@@ -107,7 +204,6 @@ def labeled_segments():
     ]
 
 
-# Formatter test fixtures
 @pytest.fixture
 def formatter_segments_with_speakers():
     """Return a list of segments with speaker IDs for formatter testing."""
@@ -135,218 +231,35 @@ def formatter_single_segment():
     ]
 
 
-@pytest.fixture
-def test_transcription_result(request):
-    """Create a TranscriptionResult with specified segments.
+# Import at the end to avoid circular dependencies
+from tests.fixtures.audio_fixtures import create_multi_speaker_audio, create_test_audio
 
-    Usage:
-        test_transcription_result(formatter_segments_with_speakers)
-        test_transcription_result(formatter_segments_without_speakers)
-        test_transcription_result(formatter_single_segment)
+
+def create_processing_job_func(audio_path, job_id=None, status=None):
     """
-    from pyhearingai.core.models import TranscriptionResult
+    Create a ProcessingJob instance with the given parameters.
 
-    # Get the segments from the provided fixture
-    segments = request.getfixturevalue(request.param)
+    Args:
+        audio_path: Path to the audio file
+        job_id: Optional job ID, will be generated if not provided
+        status: Optional processing status
 
-    # Create a transcription result with optional metadata
-    result = TranscriptionResult(
-        segments=segments, audio_path=Path("test_audio.wav"), metadata={"test": True}
-    )
-    return result
-
-
-# Mock fixtures
-@pytest.fixture
-def mock_openai():
-    """Return a mock OpenAI client and transcription."""
-    return mock_openai_client()
-
-
-@pytest.fixture
-def mock_pyannote():
-    """Return a mock Pyannote Pipeline."""
-    return mock_pyannote_pipeline()
-
-
-# Utility functions
-def clean_text(text):
-    """Clean text by removing speaker labels, punctuation, extra spaces, and line breaks."""
-    import re
-
-    # Remove speaker labels like "**Speaker 1:**"
-    text = re.sub(r"\*\*Speaker \d+:\*\*", "", text)
-    # Remove any non-alphanumeric characters (except spaces)
-    text = re.sub(r"[^\w\s]", "", text)
-    # Convert to lowercase
-    text = text.lower()
-    # Remove extra whitespace and line breaks
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
-
-
-def calculate_similarity(text1, text2):
-    """Calculate similarity ratio between two texts."""
-    import difflib
-
-    # Clean both texts
-    text1 = clean_text(text1)
-    text2 = clean_text(text2)
-
-    # Split into words for word-level comparison
-    words1 = set(text1.split())
-    words2 = set(text2.split())
-
-    # Calculate word overlap
-    common_words = words1.intersection(words2)
-    total_words = words1.union(words2)
-
-    word_similarity = len(common_words) / max(len(total_words), 1)
-
-    # Use SequenceMatcher for character-level similarity
-    char_similarity = difflib.SequenceMatcher(None, text1, text2).ratio()
-
-    # Combine both metrics (weighted average)
-    combined_similarity = (word_similarity * 0.7) + (char_similarity * 0.3)
-
-    return combined_similarity, word_similarity, char_similarity
-
-
-# Make these utility functions available to tests
-@pytest.fixture
-def text_utils():
-    """Return utility functions for text processing and comparison."""
-    return {"clean_text": clean_text, "calculate_similarity": calculate_similarity}
-
-
-# Component fixtures
-@pytest.fixture
-def audio_converter():
-    """Return an initialized FFmpegAudioConverter."""
-    from pyhearingai.infrastructure.audio_converter import FFmpegAudioConverter
-
-    return FFmpegAudioConverter()
-
-
-@pytest.fixture
-def transcriber():
-    """Return an initialized WhisperOpenAITranscriber."""
-    from pyhearingai.infrastructure.transcribers.whisper_openai import WhisperOpenAITranscriber
-
-    return WhisperOpenAITranscriber()
-
-
-@pytest.fixture
-def diarizer():
-    """Return an initialized PyannoteDiarizer."""
-    from pyhearingai.infrastructure.diarizers.pyannote import PyannoteDiarizer
-
-    return PyannoteDiarizer()
-
-
-@pytest.fixture
-def speaker_assigner():
-    """Return an initialized DefaultSpeakerAssigner."""
-    from pyhearingai.infrastructure.speaker_assignment import DefaultSpeakerAssigner
-
-    return DefaultSpeakerAssigner()
-
-
-# Assertion helpers
-@pytest.fixture
-def assert_segments():
-    """Return the assert_segments_equal function."""
-    return assert_segments_equal
-
-
-@pytest.fixture
-def assert_segment_lists():
-    """Return the assert_segment_lists_equal function."""
-    return assert_segment_lists_equal
-
-
-def pytest_configure(config):
-    """Configure pytest."""
-    # Register custom markers
-    config.addinivalue_line("markers", "slow: marks tests as slow")
-    config.addinivalue_line(
-        "markers", "requires_openai_api: mark test as requiring OpenAI API access"
-    )
-    config.addinivalue_line(
-        "markers", "requires_huggingface_api: mark test as requiring HuggingFace API access"
-    )
-    config.addinivalue_line("markers", "integration: mark test as integration test")
-    config.addinivalue_line("markers", "unit: mark test as unit test")
-    config.addinivalue_line(
-        "markers", "end_to_end: mark test as end-to-end test that verifies the complete pipeline"
-    )
-    config.addinivalue_line(
-        "markers", "on_demand: mark test to be run only when explicitly requested"
-    )
-
-
-# Add any fixtures that should be available to all tests here
-
-
-# Function that can be imported directly by test modules
-def create_processing_job_func(audio_path="test_audio.wav", job_id=None, status=None):
-    """Create a processing job with minimal required parameters for tests."""
+    Returns:
+        ProcessingJob: A new processing job instance
+    """
     from pyhearingai.core.idempotent import ProcessingJob, ProcessingStatus
 
-    # Create a job with minimal required parameters
-    job = ProcessingJob(original_audio_path=audio_path, id=job_id)
+    if job_id is None:
+        job_id = str(uuid.uuid4())
 
-    # Set status after creation if provided
+    # Create the job with the correct constructor parameters
+    job = ProcessingJob(
+        original_audio_path=str(audio_path),
+        id=job_id,
+    )
+
+    # Set the status if provided
     if status is not None:
         job.status = status
 
     return job
-
-
-@pytest.fixture
-def create_processing_job():
-    """Fixture to create a processing job with minimal required parameters for tests."""
-    return create_processing_job_func
-
-
-# Add any fixtures that should be available to all tests here
-
-
-@pytest.fixture
-def create_valid_test_audio(tmp_path=None):
-    """Create a valid test audio file for testing transcription.
-
-    Args:
-        tmp_path: Optional path for the output file. If not provided,
-                 a random temporary file will be created.
-
-    Returns:
-        Path: Path to the created test audio file
-    """
-    # Create 1-second silent audio file
-    sample_rate = 16000
-    duration = 1.0
-    samples = np.zeros(int(sample_rate * duration), dtype=np.float32)
-
-    # Add a simple sine wave to make it non-silent
-    t = np.linspace(0, duration, int(sample_rate * duration), False)
-    samples += 0.1 * np.sin(2 * np.pi * 440 * t)
-
-    # If no path provided, use a temporary file
-    if tmp_path is None:
-        audio_path = Path(tempfile.mktemp(suffix=".wav"))
-    else:
-        # If tmp_path is a directory, create a file in it
-        if isinstance(tmp_path, Path) and tmp_path.is_dir():
-            audio_path = tmp_path / "test_audio.wav"
-        else:
-            # Use the provided path directly
-            audio_path = Path(tmp_path)
-
-    # Ensure parent directory exists
-    audio_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Write the audio file
-    sf.write(audio_path, samples, sample_rate)
-
-    return audio_path

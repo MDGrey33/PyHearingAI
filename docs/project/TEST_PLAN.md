@@ -1,8 +1,126 @@
 # PyHearingAI Test Plan
 
-## Overview
+## Testing Strategy
 
-This document outlines the plan for reimplementing the PyHearingAI test suite from scratch, following clean architecture principles and pytest best practices. The goal is to create a comprehensive, maintainable test suite that provides high coverage and effectively verifies the system's behavior.
+This document outlines the testing strategy for the PyHearingAI project, following clean architecture principles and domain-driven design. The testing approach is organized by layer, ensuring that each component is tested in isolation with proper mocks, followed by integration tests to verify component interactions.
+
+### Testing Pyramid
+
+We follow a balanced testing pyramid:
+
+1. **Unit Tests**: Largest number - test individual classes and functions in isolation
+2. **Integration Tests**: Test interactions between components
+3. **Functional Tests**: Test end-to-end user workflows
+
+### Testing by Clean Architecture Layer
+
+#### Domain Layer
+- Focus on testing business rules and domain logic in isolation
+- No dependencies on external systems or frameworks
+- High test coverage (95%+)
+
+**Key Components to Test:**
+- Domain Entities (`ApiSizeLimit`, `AudioQualitySpecification`, etc.)
+- Domain Services (`ApiSizeLimitPolicy`, `AudioValidationService`)
+- Value Objects
+- Domain Events
+
+#### Application Layer
+- Test service orchestration and use cases
+- Mock external dependencies (infrastructure)
+- Test all business flows and error cases
+- Coverage target: 90%+
+
+**Key Components to Test:**
+- Service Implementations (`ChunkingServiceImpl`, etc.)
+- Orchestrators
+- Command/Query Handlers
+- Event Handlers
+
+#### Infrastructure Layer
+- Test adapters and implementations of interfaces
+- May require integration with external systems
+- Mock external APIs where appropriate
+- Coverage target: 85%+
+
+**Key Components to Test:**
+- Repository Implementations
+- Adapters (`FFmpegAudioFormatService`, etc.)
+- External API Clients
+- Data Mappers/Transformers
+
+#### Presentation Layer
+- Test CLI functionality with mocked services
+- Focus on user interaction patterns
+- Coverage target: 80%+
+
+**Key Components to Test:**
+- CLI Commands
+- Output Formatters
+- User Input Validation
+
+## Test Types and Tools
+
+### Unit Tests
+- Framework: pytest
+- Mock Framework: pytest-mock
+- Coverage Tool: pytest-cov
+- Test Location: `tests/unit/`
+
+### Integration Tests
+- Framework: pytest
+- Integration Points: Service interactions, repository data access
+- Test Location: `tests/integration/`
+
+### Functional Tests
+- Framework: pytest
+- Focus: End-to-end user workflows via CLI
+- Test Location: `tests/functional/`
+
+## Test Fixtures and Resources
+
+- Audio Fixtures: Generate test audio files with configurable parameters
+- Mock Providers: Simulate transcription and diarization services
+- File Path Fixtures: Manage test file paths and cleanup
+
+## Special Testing Considerations
+
+### Audio Processing Tests
+- Use small audio samples to keep tests fast
+- Mock FFmpeg calls where appropriate
+- Test various audio formats and qualities
+
+### External API Integration
+- Mock all external API calls in unit and most integration tests
+- Provide configuration for optional "live" API tests
+
+### Concurrency Testing
+- Test worker pools and task processing
+- Verify resource cleanup
+- Test throttling mechanisms
+
+## Test Implementation Phases
+
+1. **Phase 1:** Core domain model unit tests (current)
+2. **Phase 2:** Application service unit tests
+3. **Phase 3:** Infrastructure adapter tests
+4. **Phase 4:** Integration tests for key workflows
+5. **Phase 5:** CLI functional tests
+
+## Coverage Goals
+
+- Overall project coverage: 89.5%
+- Domain Layer: 95%+
+- Application Layer: 90%+
+- Infrastructure Layer: 85%+
+- CLI/Presentation: 80%+
+
+## Continuous Integration
+
+- Run unit tests on every commit
+- Run integration tests on PRs and main branch
+- Run full test suite including functional tests nightly
+- Generate coverage reports automatically
 
 ## Test Architecture
 
